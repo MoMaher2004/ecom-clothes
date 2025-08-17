@@ -3,9 +3,11 @@ const dotenv = require('dotenv')
 dotenv.config({ path: './config.env' })
 const express = require('express')
 const userRoute = require('./routes/userRoute')
+const cors = require('cors')
 
 const app = express()
 
+app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
