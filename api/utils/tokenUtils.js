@@ -14,4 +14,4 @@ const compareToken = async (plainToken, hashedToken) => {
   return await bcrypt.compare(plainToken, hashedToken)
 }
 
-export { generateToken, hashToken, compareToken }
+module.exports = { generateToken, hashToken, compareToken }
