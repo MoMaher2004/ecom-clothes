@@ -12,7 +12,7 @@ const createToken = (id, email) => {
 const invalidateToken = res => {
   res.clearCookie('token', {
     path: '/',
-    httpOnly: true,
+    httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'Strict'
   })
