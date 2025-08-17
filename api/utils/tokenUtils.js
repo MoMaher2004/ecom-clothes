@@ -1,5 +1,5 @@
-import crypto from 'crypto'
-import bcrypt from 'bcrypt'
+const crypto = require('crypto')
+const bcrypt = require('bcrypt')
 
 const generateToken = (length = 32) => {
   return crypto.randomBytes(length).toString('hex')
