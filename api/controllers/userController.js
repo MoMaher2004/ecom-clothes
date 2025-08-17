@@ -101,11 +101,12 @@ const saveCookies = (res, token) => {
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict',
+      sameSite: 'Lax',
       maxAge: process.env.COOKIE_EXPIRES_IN
-        ? Number(process.env.COOKIE_EXPIRES_IN) * 1000
-        : 8 * 60 * 60 * 1000
+      ? Number(process.env.COOKIE_EXPIRES_IN) * 1000
+      : 8 * 60 * 60 * 1000
     })
+    
   } catch (error) {
     console.error('save cookies error:', error)
   }
@@ -318,10 +319,10 @@ const addUser = async (req, res) => {
     if (sendEmailRes.error) {
       return res.status(400).json({ error: sendEmailRes.error })
     }
-    const loginRes = await login(req, res, true)
-    if (loginRes != true) {
-      throw new Error('Error while login after adding user')
-    }
+    // const loginRes = await login(req, res, true)
+    // if (loginRes != true) {
+    //   throw new Error('Error while login after adding user')
+    // }
     return res.status(201).json({
       success:
         'User was added successfully, Check your inbox to confirm your email'
