@@ -369,7 +369,7 @@ const confirmUserEmail = async (req, res) => {
     if (result.error) {
       return res.status(400).json({ error: 'Invalid URL' })
     }
-    return res.status(200).json({ success: result.success })
+    return res.redirect(301, process.env.URL)
   } catch (error) {
     console.error('email confirmation error:', error)
     return res
