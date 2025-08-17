@@ -59,6 +59,8 @@ const verifyToken = async (req, res, next) => {
     }
     let decoded
     try {
+      console.log(token)
+      console.log(process.env.JWT_SECRET)
       decoded = await verifyJWT(token, process.env.JWT_SECRET)
     } catch (error) {
       return res.status(401).json({
