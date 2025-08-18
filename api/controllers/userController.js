@@ -83,7 +83,7 @@ const verifyToken = async (req, res, next) => {
     //     .json({ error: 'Password changed, please login again' })
     // }
 
-    if (checkUserAuth.isEmailConfirmed == 0) {
+    if (checkUserAuth.isEmailConfirmed == 0 && !(['/resendEmailConfirmationToken', '/confirm-email'].includes(req.url))) {
       return res
         .status(301)
         .json({
