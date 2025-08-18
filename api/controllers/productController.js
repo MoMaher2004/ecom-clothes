@@ -14,7 +14,16 @@ const getProductsList = async (req, res) => {
       return res.status(200).json({ success: [] })
     }
 
-    return res.status(200).json(products)
+    // JUST FOR TESTING
+    let productsTest = []
+    for(let i=0;i<products.length;i++){
+      productsTest.push(products[i])
+      productsTest[i].imgs = ['https://zozayman.github.io/Fashion/assets/img/product-2-1.jpg', 'https://zozayman.github.io/Fashion/assets/img/product-2-1.jpg']
+    }
+    return res.status(200).json(productsTest)
+    // --------------
+
+    // return res.status(200).json(products)
   } catch (error) {
     console.error('getProductsList error:', error)
     return res
@@ -36,7 +45,16 @@ const getDeletedProductsList = async (req, res) => {
       return res.status(200).json({ success: [] })
     }
 
-    return res.status(200).json(products)
+    // JUST FOR TESTING
+    let productsTest = []
+    for(let i=0;i<products.length;i++){
+      productsTest.push(products[i])
+      productsTest[i].imgs = ['https://zozayman.github.io/Fashion/assets/img/product-2-1.jpg', 'https://zozayman.github.io/Fashion/assets/img/product-2-1.jpg']
+    }
+    return res.status(200).json(productsTest)
+    // --------------
+
+    // return res.status(200).json(products)
   } catch (error) {
     console.error('getDeletedProductsList error:', error)
     return res
@@ -57,7 +75,13 @@ const getProductById = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' })
     }
 
-    return res.status(200).json(product)
+    // JUST FOR TEST
+    let productTest = product
+    productTest.images = ['https://zozayman.github.io/Fashion/assets/img/product-2-1.jpg', 'https://zozayman.github.io/Fashion/assets/img/product-2-1.jpg']
+    return res.status(200).json(productTest)
+    // ------------
+
+    // return res.status(200).json(product)
   } catch (error) {
     console.error('getProductById error:', error)
     return res
@@ -79,7 +103,13 @@ const getProductByIdAsAdmin = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' })
     }
 
-    return res.status(200).json(product)
+    // JUST FOR TEST
+    let productTest = product
+    productTest.images = ['https://zozayman.github.io/Fashion/assets/img/product-2-1.jpg', 'https://zozayman.github.io/Fashion/assets/img/product-2-1.jpg']
+    return res.status(200).json(productTest)
+    // ------------
+
+    // return res.status(200).json(product)
   } catch (error) {
     console.error('getProductById error:', error)
     return res
