@@ -67,24 +67,35 @@ const verifyToken = async (req, res, next) => {
       })
     }
     const tokenIssuedAt = new Date(decoded.iat * 1000)
-    const passwordUpdatedAt = new Date(await userModel.checkPasswordChange(decoded.id))
+    const checkUserAuth = new Date(await userModel.checkUserAuth(decoded.id))
 
-    if (passwordUpdatedAt > tokenIssuedAt) {
-      invalidateToken(res)
-      return res
-        .status(401)
-        .json({ error: 'Password changed, please login again' })
-    }
-    const isDeletedRes = await userModel.getUserById(decoded.id)
-    if (!isDeletedRes || isDeletedRes.isDeleted) {
+    if (!checkUserAuth || checkUserAuth.isDeleted) {
       return res.status(404).json({
         error: 'User not found',
         redirect: 'loginPage'
       })
     }
+
+    if (checkUserAuth.passwordUpdatedAt > tokenIssuedAt) {
+      invalidateToken(res)
+      return res
+        .status(401)
+        .json({ error: 'Password changed, please login again' })
+    }
+
+    if (checkUserAuth.isEmailConfirmed == 0) {
+      return res
+        .status(301)
+        .json({
+          error: 'Email is not confirmed yet',
+          redirect: 'emailConfirmPage'
+        })
+    }
+
     req.user = {
       id: decoded.id,
-      email: decoded.email
+      email: decoded.email,
+      isAdmin: decoded.isAdmin
     }
     next()
   } catch (error) {
@@ -99,14 +110,13 @@ const verifyToken = async (req, res, next) => {
 const saveCookies = (res, token) => {
   try {
     res.cookie('token', token, {
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'Lax',
       maxAge: process.env.COOKIE_EXPIRES_IN
-      ? Number(process.env.COOKIE_EXPIRES_IN) * 1000
-      : 8 * 60 * 60 * 1000
+        ? Number(process.env.COOKIE_EXPIRES_IN) * 1000
+        : 8 * 60 * 60 * 1000
     })
-    
   } catch (error) {
     console.error('save cookies error:', error)
   }
@@ -114,18 +124,9 @@ const saveCookies = (res, token) => {
 
 const adminOnly = async (req, res, next) => {
   try {
-    const id = req.user.id
-    const user = await userModel.getUserById(id)
-
-    if (!user) {
-      invalidateToken(res)
-      return res.status(404).json({ error: 'User not found' })
-    }
-
-    if (!user.isAdmin) {
+    if (!req.user.isAdmin || req.user.isAdmin == false) {
       return res.status(403).json({ error: 'Access denied' })
     }
-
     next()
   } catch (error) {
     console.error('check user role error:', error)
@@ -149,14 +150,14 @@ const login = async (req, res, fromFunction = false) => {
     result.token = createToken(result.id, result.email)
     saveCookies(res, result.token)
     if (fromFunction) {
-        console.log(fromFunction)
-        return true
+      console.log(fromFunction)
+      return true
     }
     let redirect
     if (result.isEmailConfirmed == 0) {
-        redirect = 'confirmEmailPage'
+      redirect = 'confirmEmailPage'
     } else {
-        redirect = 'homePage'
+      redirect = 'homePage'
     }
     return res
       .status(200)
@@ -319,10 +320,6 @@ const addUser = async (req, res) => {
     if (sendEmailRes.error) {
       return res.status(400).json({ error: sendEmailRes.error })
     }
-    // const loginRes = await login(req, res, true)
-    // if (loginRes != true) {
-    //   throw new Error('Error while login after adding user')
-    // }
     return res.status(201).json({
       success:
         'User was added successfully, Check your inbox to confirm your email'

@@ -12,11 +12,14 @@ const login = async (email, password) => {
       'SELECT * FROM users WHERE email = ? AND isDeleted = 0',
       [email]
     )
-    
+
     if (rows.length === 0) {
-        return null
+      return null
     }
-    const passwordComparisonRes = await bcrypt.compare(password, rows[0].password)
+    const passwordComparisonRes = await bcrypt.compare(
+      password,
+      rows[0].password
+    )
     if (!passwordComparisonRes) {
       return null
     }
@@ -50,22 +53,27 @@ const changePassword = async (email, oldPassword, newPassword) => {
   }
 }
 
-const checkPasswordChange = async id => {
+const checkUserAuth = async id => {
   try {
     const [rows] = await conn.query(
-      'SELECT passwordLastUpdatedAt FROM users WHERE id = ?',
+      'SELECT passwordLastUpdatedAt, isEmailConfirmed, isDeleted, email, isAdmin FROM users WHERE id = ?',
       [id]
     )
-    return rows[0].passwordLastUpdatedAt
+    return rows[0]
   } catch (error) {
     console.error('Error during checking password change:', error)
     throw new Error('Something went wrong')
   }
 }
 
-const getUserById = async id => {
+const getUserById = async (id, includeDeleted = false) => {
   try {
-    const [rows] = await conn.query('SELECT * FROM users WHERE id = ?', [id])
+    const [rows] = await conn.query(
+      'SELECT * FROM users WHERE id = ? ' + includeDeleted
+        ? ''
+        : 'AND isDeleted = 0',
+      [id]
+    )
     if (rows.length === 0) {
       return null
     }
@@ -163,7 +171,7 @@ const getUsersList = async (page = 1, limit = 20, isDeleted = 0) => {
     const offset = (page - 1) * limit
     const [rows] = await conn.query(
       'SELECT id, firstName, lastName, email, isAdmin FROM users WHERE isDeleted = ? LIMIT ? OFFSET ?',
-      [isDeleted ? 1:0, limit, offset]
+      [isDeleted ? 1 : 0, limit, offset]
     )
     return rows
   } catch (error) {
@@ -209,7 +217,7 @@ const confirmUserEmail = async (id, token) => {
 module.exports = {
   login,
   changePassword,
-  checkPasswordChange,
+  checkUserAuth,
   getUserById,
   updateUserRole,
   deactivateUser,
