@@ -67,7 +67,7 @@ const verifyToken = async (req, res, next) => {
       })
     }
     const tokenIssuedAt = new Date(decoded.iat * 1000)
-    const checkUserAuth = new Date(await userModel.checkUserAuth(decoded.id))
+    const checkUserAuth = await userModel.checkUserAuth(decoded.id)
 
     if (!checkUserAuth || checkUserAuth.isDeleted) {
       return res.status(404).json({
@@ -76,7 +76,7 @@ const verifyToken = async (req, res, next) => {
       })
     }
 
-    if (checkUserAuth.passwordUpdatedAt > tokenIssuedAt) {
+    if (new Date(checkUserAuth.passwordUpdatedAt) > tokenIssuedAt) {
       invalidateToken(res)
       return res
         .status(401)
@@ -91,11 +91,10 @@ const verifyToken = async (req, res, next) => {
           redirect: 'emailConfirmPage'
         })
     }
-
     req.user = {
       id: decoded.id,
       email: decoded.email,
-      isAdmin: decoded.isAdmin
+      isAdmin: checkUserAuth.isAdmin
     }
     next()
   } catch (error) {
@@ -367,7 +366,9 @@ const confirmUserEmail = async (req, res) => {
     if (result.error) {
       return res.status(400).json({ error: 'Invalid URL' })
     }
-    return res.redirect(301, process.env.URL)
+    return res
+      .status(200)
+      .json({ success: 'Login is successful', redirect: 'homePage' })
   } catch (error) {
     console.error('email confirmation error:', error)
     return res
