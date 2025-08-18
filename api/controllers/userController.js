@@ -76,12 +76,12 @@ const verifyToken = async (req, res, next) => {
       })
     }
 
-    if (new Date(checkUserAuth.passwordUpdatedAt) > tokenIssuedAt) {
-      invalidateToken(res)
-      return res
-        .status(401)
-        .json({ error: 'Password changed, please login again' })
-    }
+    // if (new Date(checkUserAuth.passwordUpdatedAt) > tokenIssuedAt) {
+    //   invalidateToken(res)
+    //   return res
+    //     .status(401)
+    //     .json({ error: 'Password changed, please login again' })
+    // }
 
     if (checkUserAuth.isEmailConfirmed == 0) {
       return res
