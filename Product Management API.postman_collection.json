@@ -1,0 +1,341 @@
+{
+	"info": {
+		"_postman_id": "0b8d372a-9466-4418-93d1-981e3d9d42cb",
+		"name": "Product Management API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "38193655"
+	},
+	"item": [
+		{
+			"name": "Public Routes",
+			"item": [
+				{
+					"name": "Get Active Products",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/product/getProductsList?page=1&limit=5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"product",
+								"getProductsList"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/product/getProductById/5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"product",
+								"getProductById",
+								"5"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin Routes",
+			"item": [
+				{
+					"name": "[ADMIN] Add New Product",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Rare Orchid\",\n  \"price\": 45.99,\n  \"discount\": 0.15,\n  \"description\": \"Exotic orchid species\",\n  \"withNursery\": true,\n  \"amountOfSmallSize\": 8,\n  \"amountOfLargeSize\": 12\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/product/addProduct",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"product",
+								"addProduct"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[ADMIN] Edit Product",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": 3,\n  \"price\": 95.50,\n  \"discount\": 0.25,\n  \"description\": \"Updated premium plant\",\n  \"amountOfSmallSize\": 7,\n  \"amountOfLargeSize\": 20\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/product/editProduct/3",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"product",
+								"editProduct",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[ADMIN] Delete Product",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": 4\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/product/deleteProduct/5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"product",
+								"deleteProduct",
+								"5"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[ADMIN] Get Deleted Products",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/product/getDeletedProductsList",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"product",
+								"getDeletedProductsList"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[ADMIN] Restore Product",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": 5\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/product/restoreProduct",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"product",
+								"restoreProduct"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[ADMIN] Get Product (Including Deleted)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/product/getProductByIdAsAdmin/5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"product",
+								"getProductByIdAsAdmin",
+								"5"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"exec": [
+					"pm.environment.set('base_url', 'http://localhost:3000');"
+				],
+				"type": "text/javascript"
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"exec": [
+					"if (pm.response.code === 200 && pm.request.url.path.includes('login')) {",
+					"    const jsonData = pm.response.json();",
+					"    pm.environment.set('admin_token', jsonData.token);",
+					"}"
+				],
+				"type": "text/javascript"
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000"
+		},
+		{
+			"key": "admin_token",
+			"value": ""
+		}
+	]
+}
