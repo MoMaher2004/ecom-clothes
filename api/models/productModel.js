@@ -26,7 +26,8 @@ const getProductsList = async (page = 1, limit = 20, isDeleted = false, orderBy 
     } else {
       filter = ''
     }
-    const [rows] = await conn.query('SELECT * FROM products WHERE isDeleted = ? LIMIT ? OFFSET ?', [
+
+    const [rows] = await conn.query('SELECT * FROM products WHERE isDeleted = ?' + filter + ' LIMIT ? OFFSET ?', [
       isDeleted ? 1 : 0,
       limit,
       offset
