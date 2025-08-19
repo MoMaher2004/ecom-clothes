@@ -1,30 +1,35 @@
+const { error } = require('console')
 const productModel = require('../models/productModel')
 const va = require('../utils/validators')
+const fs = require('fs').promises
+const path = require('path')
 
 const getProductsList = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1
     const limit = parseInt(req.query.limit) || 10
-    const orderBy = ['', 'newAdded', 'mostBought'].includes(req.query.orderBy) ? req.query.orderBy : ''
+    const orderBy = ['', 'newAdded', 'mostBought'].includes(req.query.orderBy)
+      ? req.query.orderBy
+      : ''
+    const withNursery = ['', 'yes', 'no'].includes(req.query.withNursery)
+      ? req.query.withNursery
+      : ''
     if (isNaN(page) || page < 1 || isNaN(limit) || limit < 1) {
       return res.status(400).json({ error: 'Invalid pagination parameters' })
     }
-    const products = await productModel.getProductsList(page, limit, false, orderBy)
+    const products = await productModel.getProductsList(
+      page,
+      limit,
+      false,
+      orderBy,
+      withNursery
+    )
 
     if (products.length === 0) {
       return res.status(200).json({ success: [] })
     }
 
-    // JUST FOR TESTING
-    let productsTest = []
-    for(let i=0;i<products.length;i++){
-      productsTest.push(products[i])
-      productsTest[i].imgs = ['https://zozayman.github.io/Fashion/assets/img/product-2-1.jpg', 'https://zozayman.github.io/Fashion/assets/img/product-2-1.jpg']
-    }
-    return res.status(200).json(productsTest)
-    // --------------
-
-    // return res.status(200).json(products)
+    return res.status(200).json({ data: products, length: products.length })
   } catch (error) {
     console.error('getProductsList error:', error)
     return res
@@ -46,16 +51,7 @@ const getDeletedProductsList = async (req, res) => {
       return res.status(200).json({ success: [] })
     }
 
-    // JUST FOR TESTING
-    let productsTest = []
-    for(let i=0;i<products.length;i++){
-      productsTest.push(products[i])
-      productsTest[i].imgs = ['https://zozayman.github.io/Fashion/assets/img/product-2-1.jpg', 'https://zozayman.github.io/Fashion/assets/img/product-2-1.jpg']
-    }
-    return res.status(200).json(productsTest)
-    // --------------
-
-    // return res.status(200).json(products)
+    return res.status(200).json({ data: products, length: products.length })
   } catch (error) {
     console.error('getDeletedProductsList error:', error)
     return res
@@ -76,13 +72,7 @@ const getProductById = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' })
     }
 
-    // JUST FOR TEST
-    let productTest = product
-    productTest.images = ['https://zozayman.github.io/Fashion/assets/img/product-2-1.jpg', 'https://zozayman.github.io/Fashion/assets/img/product-2-1.jpg']
-    return res.status(200).json(productTest)
-    // ------------
-
-    // return res.status(200).json(product)
+    return res.status(200).json(product)
   } catch (error) {
     console.error('getProductById error:', error)
     return res
@@ -104,13 +94,7 @@ const getProductByIdAsAdmin = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' })
     }
 
-    // JUST FOR TEST
-    let productTest = product
-    productTest.images = ['https://zozayman.github.io/Fashion/assets/img/product-2-1.jpg', 'https://zozayman.github.io/Fashion/assets/img/product-2-1.jpg']
-    return res.status(200).json(productTest)
-    // ------------
-
-    // return res.status(200).json(product)
+    return res.status(200).json(product)
   } catch (error) {
     console.error('getProductById error:', error)
     return res
@@ -259,12 +243,53 @@ const restoreProduct = async (req, res) => {
       return res.status(400).json({ error: 'Valid product ID is required' })
     }
     await productModel.restoreProduct(id)
-    return res.status(200).json({ success: 'Product was restored successfully' })
+    return res
+      .status(200)
+      .json({ success: 'Product was restored successfully' })
   } catch (error) {
     console.error('restoreProduct error:', error)
     return res
       .status(500)
       .json({ error: 'Internal server error, Please try again' })
+  }
+}
+
+const uploadImages = async (req, res) => {
+  try {
+    const productId = parseInt(Object.values(req.body)[0])
+    if (isNaN(productId) || productId < 1) {
+      return res.status(400).json({ message: 'Product ID is invalid' })
+    }
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: 'No files uploaded' })
+    }
+
+    for (const file of req.files) {
+      await productModel.uploadImages(productId, file.filename)
+    }
+
+    return res
+      .status(200)
+      .json({ success: 'Images were uploaded successfully' })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Internal server error, Please try again' })
+  }
+}
+
+const deleteImage = async (req, res) => {
+  try {
+    const fileName = req.params.imageName
+    const result = await productModel.deleteImage(fileName)
+    if (result.error) {
+      res.status(400).json({ error: result.error })
+    }
+    const filePath = path.join(__dirname, '../../images', fileName)
+    await fs.unlink(filePath)
+    return res.status(200).json({ success: 'Images were deleted successfully' })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Internal server error, Please try again' })
   }
 }
 
@@ -276,5 +301,7 @@ module.exports = {
   addProduct,
   editProduct,
   deleteProduct,
-  restoreProduct
+  restoreProduct,
+  uploadImages,
+  deleteImage
 }

@@ -5,8 +5,15 @@ const express = require('express')
 const userRoute = require('./routes/userRoute')
 const productRoute = require('./routes/productRoute')
 const cors = require('cors')
+const path = require('path')
+const fs = require('fs')
 
 const app = express()
+
+const uploadDir = path.join(__dirname, '../images')
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir)
+}
 
 app.use(cors({
   origin: ["http://127.0.0.1:5173", "http://localhost:5173"],
@@ -14,6 +21,7 @@ app.use(cors({
   credentials: true
 }))
 app.use(express.json())
+app.use('../images', express.static('images'))
 app.use(express.urlencoded({ extended: true }))
 
 app.use('/api/user', userRoute)

@@ -275,6 +275,30 @@ const resendEmailConfirmationToken = async (req, res) => {
   }
 }
 
+const confirmUserEmail = async (req, res) => {
+  try {
+    const { id, token } = req.query
+    if (!id || !token) {
+      return res.status(400).json({ error: 'Invalid URL' })
+    }
+    const result = await userModel.confirmUserEmail(
+      decodeURIComponent(id),
+      decodeURIComponent(token)
+    )
+    if (result.error) {
+      return res.status(400).json({ error: 'Invalid URL' })
+    }
+    return res
+      .status(200)
+      .json({ success: 'Login is successful', redirect: 'homePage' })
+  } catch (error) {
+    console.error('email confirmation error:', error)
+    return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })
+  }
+}
+
 const addUser = async (req, res) => {
   try {
     const { firstName, lastName, email, password, birthDate } = req.body
@@ -346,30 +370,6 @@ const getUsersList = async (req, res) => {
     return res.status(200).json(users)
   } catch (error) {
     console.error('get users list error:', error)
-    return res
-      .status(500)
-      .json({ error: 'Internal server error, Please try again' })
-  }
-}
-
-const confirmUserEmail = async (req, res) => {
-  try {
-    const { id, token } = req.query
-    if (!id || !token) {
-      return res.status(400).json({ error: 'Invalid URL' })
-    }
-    const result = await userModel.confirmUserEmail(
-      decodeURIComponent(id),
-      decodeURIComponent(token)
-    )
-    if (result.error) {
-      return res.status(400).json({ error: 'Invalid URL' })
-    }
-    return res
-      .status(200)
-      .json({ success: 'Login is successful', redirect: 'homePage' })
-  } catch (error) {
-    console.error('email confirmation error:', error)
     return res
       .status(500)
       .json({ error: 'Internal server error, Please try again' })

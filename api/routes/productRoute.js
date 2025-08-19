@@ -8,8 +8,11 @@ const {
   addProduct,
   editProduct,
   deleteProduct,
-  restoreProduct
+  restoreProduct,
+  deleteImage,
+  uploadImages
 } = require('../controllers/productController')
+const imagesUtils = require('../utils/imagesUtils')
 
 const router = express.Router()
 
@@ -31,5 +34,8 @@ router.post('/addProduct/', verifyToken, adminOnly, addProduct)
 router.patch('/editProduct/:id', verifyToken, adminOnly, editProduct)
 router.delete('/deleteProduct/:id', verifyToken, adminOnly, deleteProduct)
 router.patch('/restoreProduct/', verifyToken, adminOnly, restoreProduct)
+
+router.post('/uploadImage', verifyToken, adminOnly, imagesUtils.uploadImages.array('images', 10), uploadImages)
+router.delete('/deleteImage/:imageName', verifyToken, adminOnly, deleteImage)
 
 module.exports = router

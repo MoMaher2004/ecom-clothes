@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Image Upload</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #444;
+        }
+        
+        input[type="number"],
+        input[type="file"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="number"]:focus,
+        input[type="file"]:focus {
+            border-color: #6a11cb;
+            outline: none;
+        }
+        
+        .file-input-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        
+        .file-input-label {
+            display: block;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 2px dashed #ccc;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-input-label:hover {
+            background-color: #e9ecef;
+            border-color: #6a11cb;
+        }
+        
+        .file-input-label.drag-over {
+            background-color: #e6f7ff;
+            border-color: #2575fc;
+            border-style: solid;
+        }
+        
+        .file-input {
+            position: absolute;
+            left: -9999px;
+        }
+        
+        .image-previews {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .image-preview {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .image-preview img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .submit-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 20px;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        
+        .status-message {
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+        
+        .uploading {
+            background-color: #cce5ff;
+            color: #004085;
+            display: block;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                border-radius: 0;
+            }
+            
+            .image-previews {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Product Image Upload</h1>
+            <p class="subtitle">Upload multiple images for your products</p>
+        </header>
+        
+        <div class="content">
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="productId">Product ID</label>
+                    <input type="number" id="productId" name="productId" required min="1" placeholder="Enter product ID">
+                </div>
+                
+                <div class="form-group">
+                    <label>Select Images</label>
+                    <div class="file-input-container">
+                        <label for="images" class="file-input-label" id="fileInputLabel">
+                            <span>Click to select or drag and drop images here</span>
+                            <input type="file" id="images" name="images" class="file-input" multiple accept="image/*">
+                        </label>
+                    </div>
+                    
+                    <div class="image-previews" id="imagePreviews"></div>
+                </div>
+                
+                <button type="submit" class="submit-btn" id="submitBtn">Upload Images</button>
+                
+                <div class="status-message" id="statusMessage"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('uploadForm');
+            const fileInput = document.getElementById('images');
+            const fileInputLabel = document.getElementById('fileInputLabel');
+            const imagePreviews = document.getElementById('imagePreviews');
+            const statusMessage = document.getElementById('statusMessage');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            let selectedFiles = [];
+            
+            // Drag and drop functionality
+            fileInputLabel.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('drag-over');
+            });
+            
+            fileInputLabel.addEventListener('dragleave', function() {
+                this.classList.remove('drag-over');
+            });
+            
+            fileInputLabel.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+                
+                if (e.dataTransfer.files.length > 0) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileSelection(e.dataTransfer.files);
+                }
+            });
+            
+            // File input change event
+            fileInput.addEventListener('change', function() {
+                handleFileSelection(this.files);
+            });
+            
+            // Handle file selection
+            function handleFileSelection(files) {
+                if (files.length === 0) return;
+                
+                selectedFiles = Array.from(files);
+                imagePreviews.innerHTML = '';
+                
+                // Check if any non-image files are selected
+                const nonImageFiles = selectedFiles.filter(file => !file.type.startsWith('image/'));
+                if (nonImageFiles.length > 0) {
+                    showStatus('Please select only image files.', 'error');
+                    selectedFiles = [];
+                    fileInput.value = '';
+                    return;
+                }
+                
+                // Generate previews
+                selectedFiles.forEach((file, index) => {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const preview = document.createElement('div');
+                        preview.className = 'image-preview';
+                        preview.innerHTML = `
+                            <img src="${e.target.result}" alt="Preview">
+                            <button type="button" class="remove-btn" data-index="${index}">×</button>
+                        `;
+                        imagePreviews.appendChild(preview);
+                        
+                        // Add event listener to remove button
+                        preview.querySelector('.remove-btn').addEventListener('click', function() {
+                            const indexToRemove = parseInt(this.getAttribute('data-index'));
+                            selectedFiles.splice(indexToRemove, 1);
+                            
+                            // Regenerate previews
+                            handleFileSelection(selectedFiles);
+                        });
+                    };
+                    
+                    reader.readAsDataURL(file);
+                });
+                
+                showStatus(`Selected ${files.length} image(s). Ready to upload.`, 'success');
+            }
+            
+            // Form submission
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const productId = document.getElementById('productId').value;
+                if (!productId) {
+                    showStatus('Please enter a product ID.', 'error');
+                    return;
+                }
+                
+                if (selectedFiles.length === 0) {
+                    showStatus('Please select at least one image to upload.', 'error');
+                    return;
+                }
+                
+                // Create FormData object
+                const formData = new FormData();
+                formData.append('productId', productId);
+                
+                // Append each file
+                selectedFiles.forEach(file => {
+                    formData.append('images', file);
+                });
+                
+                // Disable submit button and show uploading status
+                submitBtn.disabled = true;
+                showStatus('Uploading images...', 'uploading');
+                
+                try {
+                    const response = await fetch('http://localhost:3000/api/product/uploadImage', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        showStatus('Images uploaded successfully!', 'success');
+                        // Reset form after successful upload
+                        form.reset();
+                        selectedFiles = [];
+                        imagePreviews.innerHTML = '';
+                    } else {
+                        showStatus(result.message || 'Error uploading images.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    showStatus('Network error. Please try again.', 'error');
+                } finally {
+                    submitBtn.disabled = false;
+                }
+            });
+            
+            // Show status message
+            function showStatus(message, type) {
+                statusMessage.textContent = message;
+                statusMessage.className = 'status-message ' + type;
+            }
+        });
+    </script>
+</body>
+</html>

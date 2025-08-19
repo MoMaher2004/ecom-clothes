@@ -2,7 +2,15 @@ const conn = require('../config/db')
 
 const getProductById = async (id, allowDeleted = false) => {
   try {
-    const [rows] = await conn.query('SELECT * FROM products WHERE id = ? ' + (allowDeleted ? '' : 'AND isDeleted = 0'), [id])
+    const [rows] = await conn.query(
+      `SELECT p.*, GROUP_CONCAT(i.fileName) AS images
+       FROM products p
+       JOIN images i ON p.id = i.productId
+       WHERE p.id = ? ` 
+       + (allowDeleted ? '' : ' AND p.isDeleted = 0 ') +
+       `GROUP BY p.id`,
+      [id]
+    )
     if (rows.length === 0) {
       return null
     }
@@ -14,7 +22,7 @@ const getProductById = async (id, allowDeleted = false) => {
   }
 }
 
-const getProductsList = async (page = 1, limit = 20, isDeleted = false, orderBy = false) => {
+const getProductsList = async (page = 1, limit = 20, isDeleted = false, orderBy = false, nursery = null) => {
   try {
     const offset = (page - 1) * limit
     let filter
@@ -26,12 +34,31 @@ const getProductsList = async (page = 1, limit = 20, isDeleted = false, orderBy 
     } else {
       filter = ''
     }
+    let withNursery
+    if (nursery == 'yes'){
+      withNursery = 'AND withNursery = 1'
+    }
+    else if (nursery == 'no'){
+      withNursery = 'AND withNursery = 0'
+    } else {
+      withNursery = ''
+    }
 
-    const [rows] = await conn.query('SELECT * FROM products WHERE isDeleted = ?' + filter + ' LIMIT ? OFFSET ?', [
-      isDeleted ? 1 : 0,
-      limit,
-      offset
-    ])
+    const [rows] = await conn.query(
+      `SELECT p.*, GROUP_CONCAT(i.fileName) AS images
+       FROM products p
+       JOIN images i ON p.id = i.productId
+       WHERE isDeleted = ? 
+       ${withNursery}
+       GROUP BY p.id
+       ${filter}
+       LIMIT ? OFFSET ?`,
+      [
+        isDeleted ? 1 : 0,
+        limit,
+        offset
+      ] 
+    )
     if (rows.length === 0) {
       return []
     }
@@ -130,7 +157,6 @@ const deleteProduct = async id => {
 
 const restoreProduct = async id => {
   try {
-    console.log(id)
     const [res] = await conn.query(
       `UPDATE products SET isDeleted = 0 WHERE id = ?`,
       [id]
@@ -145,11 +171,45 @@ const restoreProduct = async id => {
   }
 }
 
+const uploadImages = async (getProductById, fileName) => {
+  try {
+    const [res] = await conn.query(
+      `INSERT INTO images (productId, fileName) VALUES (?, ?)`,
+      [getProductById, fileName]
+    )
+    if (res.affectedRows === 0) {
+      throw new Error('Something went wrong')
+    }
+    return { success: 'Image was uploaded successfully' }
+  } catch (error) {
+    console.error('Error during uploadImages:', error)
+    throw new Error('Something went wrong')
+  }
+}
+
+const deleteImage = async (fileName) => {
+  try {
+    const [res] = await conn.query(
+      `DELETE FROM images WHERE fileName = ?`,
+      [fileName]
+    )
+    if (res.affectedRows === 0) {
+      throw new Error('Something went wrong')
+    }
+    return { success: 'Image was deleted successfully' }
+  } catch (error) {
+    console.error('Error during deleteImage:', error)
+    throw new Error('Something went wrong')
+  }
+}
+
 module.exports = {
   getProductById,
   getProductsList,
   addProduct,
   editProduct,
   deleteProduct,
-  restoreProduct
+  restoreProduct,
+  uploadImages,
+  deleteImage
 }

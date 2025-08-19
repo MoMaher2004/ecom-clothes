@@ -249,3 +249,41 @@ UPDATE products SET createdAt = FROM_UNIXTIME(
 -- 3. Set as NOT NULL with default
 ALTER TABLE products 
 MODIFY COLUMN createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+-- images
+CREATE TABLE images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    productId INT NOT NULL,
+    fileName VARCHAR(255) NOT NULL,
+    FOREIGN KEY (productId) REFERENCES products(id) ON DELETE CASCADE
+);
+
+INSERT INTO images (productId, fileName) VALUES
+(1, 'product-2-1.jpg'),
+(1, 'product-4-2.jpg'),
+
+(2, 'product-5-2.jpg'),
+(2, 'product-3-2.jpg'),
+
+(3, 'product-2-1.jpg'),
+(3, 'product-5-2.jpg'),
+
+(4, 'product-4-2.jpg'),
+
+(5, 'product-3-2.jpg'),
+(5, 'product-2-1.jpg'),
+
+(6, 'product-4-2.jpg'),
+
+(7, 'product-5-2.jpg'),
+(7, 'product-3-2.jpg'),
+
+(8, 'product-2-1.jpg'),
+
+(9, 'product-4-2.jpg'),
+(9, 'product-5-2.jpg'),
+
+(10, 'product-3-2.jpg'),
+
+(11, 'product-2-1.jpg'),
+(11, 'product-4-2.jpg');
