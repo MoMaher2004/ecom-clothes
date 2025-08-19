@@ -5,10 +5,11 @@ const getProductsList = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1
     const limit = parseInt(req.query.limit) || 10
+    const orderBy = ['', 'newAdded', 'mostBought'].includes(req.query.orderBy) ? req.query.orderBy : ''
     if (isNaN(page) || page < 1 || isNaN(limit) || limit < 1) {
       return res.status(400).json({ error: 'Invalid pagination parameters' })
     }
-    const products = await productModel.getProductsList(page, limit)
+    const products = await productModel.getProductsList(page, limit, orderBy)
 
     if (products.length === 0) {
       return res.status(200).json({ success: [] })

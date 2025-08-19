@@ -14,9 +14,18 @@ const getProductById = async (id, allowDeleted = false) => {
   }
 }
 
-const getProductsList = async (page = 1, limit = 20, isDeleted = false) => {
+const getProductsList = async (page = 1, limit = 20, isDeleted = false, orderBy = false) => {
   try {
     const offset = (page - 1) * limit
+    let filter
+    if (orderBy == 'newAdded') {
+      filter = ' ORDER BY createdAt DESC'
+    } else if (orderBy == 'mostBought') {
+      // filter = ' ORDER BY createdAt DESC'
+      filter = ''
+    } else {
+      filter = ''
+    }
     const [rows] = await conn.query('SELECT * FROM products WHERE isDeleted = ? LIMIT ? OFFSET ?', [
       isDeleted ? 1 : 0,
       limit,

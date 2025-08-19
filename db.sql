@@ -235,3 +235,17 @@ VALUES
 		9,
 		1
 	);
+
+
+-- 1. Add nullable column
+ALTER TABLE products ADD COLUMN createdAt DATETIME NULL;
+
+-- 2. Fill existing records with random times (Jan 1 - now)
+UPDATE products SET createdAt = FROM_UNIXTIME(
+    UNIX_TIMESTAMP('2023-01-01') + 
+    RAND() * (UNIX_TIMESTAMP() - UNIX_TIMESTAMP('2023-01-01'))
+);
+
+-- 3. Set as NOT NULL with default
+ALTER TABLE products 
+MODIFY COLUMN createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;
