@@ -29,7 +29,7 @@ const getProductsList = async (req, res) => {
       return res.status(200).json({ success: [] })
     }
 
-    return res.status(200).json({ data: products, length: products.length })
+    return res.status(200).json({ data: products['rows'], length: products['count'] })
   } catch (error) {
     console.error('getProductsList error:', error)
     return res
@@ -51,7 +51,7 @@ const getDeletedProductsList = async (req, res) => {
       return res.status(200).json({ success: [] })
     }
 
-    return res.status(200).json({ data: products, length: products.length })
+    return res.status(200).json({ data: products['rows'], length: products['count'] })
   } catch (error) {
     console.error('getDeletedProductsList error:', error)
     return res

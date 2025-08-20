@@ -59,10 +59,19 @@ const getProductsList = async (page = 1, limit = 20, isDeleted = false, orderBy 
         offset
       ] 
     )
+    const [count] = await conn.query(
+      `SELECT COUNT(p.id) AS total
+       FROM products p
+       JOIN images i ON p.id = i.productId
+       WHERE isDeleted = ?
+       ${withNursery}
+       ${filter}`,
+      [isDeleted ? 1 : 0]
+    )
     if (rows.length === 0) {
       return []
     }
-    return rows
+    return {rows, count}
   } catch (error) {
     console.error('Error during getProductsList:', error)
     throw new Error('Something went wrong')
