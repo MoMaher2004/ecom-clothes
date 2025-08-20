@@ -386,7 +386,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"email\": \"john.doe@example.com\",\n    \"password\": \"12345678\"\n}"
+									"raw": "{\n    \"email\": \"emma.johnson@example.com\",\n    \"password\": \"12345678\"\n}"
 								},
 								"url": {
 									"raw": "{{base_url}}/api/user/login",
@@ -447,14 +447,15 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"john.doe@example.com\",\n    \"password\": \"12345678\",\n    \"birthDate\": \"1990-01-01\"\n}"
+									"raw": "{\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"emma.johnson@example.com\",\n    \"password\": \"12345678\",\n    \"birthDate\": \"1990-01-01\"\n}"
 								},
 								"url": {
-									"raw": "{{base_url}}/user/add",
+									"raw": "{{base_url}}/api/user/add",
 									"host": [
 										"{{base_url}}"
 									],
 									"path": [
+										"api",
 										"user",
 										"add"
 									]
@@ -578,7 +579,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"email\": \"john.smith@example.com\"\n}",
+									"raw": "{\n    \"email\": \"emma.johnson@example.com\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -605,7 +606,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{base_url}}/api/user/checkPasswordToken?email=john.smith%40example.com&token=095505703ffe32b91a197dfd5f95ae655d997b86cbd82f7887a78a223684a5db",
+									"raw": "{{base_url}}/api/user/checkPasswordToken?token=cf48c9378b024d1d70fae135a6d8d8a01a6f991cccf7235fdbfa98a000961409&email=emma.johnson%40example.com",
 									"host": [
 										"{{base_url}}"
 									],
@@ -616,12 +617,12 @@
 									],
 									"query": [
 										{
-											"key": "email",
-											"value": "john.smith%40example.com"
+											"key": "token",
+											"value": "cf48c9378b024d1d70fae135a6d8d8a01a6f991cccf7235fdbfa98a000961409"
 										},
 										{
-											"key": "token",
-											"value": "095505703ffe32b91a197dfd5f95ae655d997b86cbd82f7887a78a223684a5db"
+											"key": "email",
+											"value": "emma.johnson%40example.com"
 										}
 									]
 								}
@@ -882,11 +883,12 @@
 									}
 								],
 								"url": {
-									"raw": "{{base_url}}/user/resendEmailConfirmationToken",
+									"raw": "{{base_url}}/api/user/resendEmailConfirmationToken",
 									"host": [
 										"{{base_url}}"
 									],
 									"path": [
+										"api",
 										"user",
 										"resendEmailConfirmationToken"
 									]
@@ -915,22 +917,23 @@
 									}
 								],
 								"url": {
-									"raw": "{{base_url}}/user/confirm-email?token=8238f2f5253d7b4a7e61655c0ebed30ca3dd11f9dc569e08db7385a1f9696556&id=9",
+									"raw": "{{base_url}}/api/user/confirm-email?token=2f7bde373c8cec2e1282a53b964f72b25016cdaa47f2d3b46a6705dd938d0d1a&id=10",
 									"host": [
 										"{{base_url}}"
 									],
 									"path": [
+										"api",
 										"user",
 										"confirm-email"
 									],
 									"query": [
 										{
 											"key": "token",
-											"value": "8238f2f5253d7b4a7e61655c0ebed30ca3dd11f9dc569e08db7385a1f9696556"
+											"value": "2f7bde373c8cec2e1282a53b964f72b25016cdaa47f2d3b46a6705dd938d0d1a"
 										},
 										{
 											"key": "id",
-											"value": "9"
+											"value": "10"
 										}
 									]
 								}

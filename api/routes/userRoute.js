@@ -17,13 +17,15 @@ const {
     getUserById,
     getUserByEmail,
     sendResetPasswordToken,
-    checkPasswordToken
+    checkPasswordToken,
+    resetPassword
 } = require('../controllers/userController')
 
 const router = express.Router()
 
 router.post('/login', (req, res) => login(req, res, false))
 router.patch('/changePassword', verifyToken, changePassword)
+router.patch('/resetPassword', verifyToken, resetPassword)
 router.patch(
   '/updateRole',
   verifyToken,

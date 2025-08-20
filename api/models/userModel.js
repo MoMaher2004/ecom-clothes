@@ -72,11 +72,18 @@ const checkPasswordToken = async (email, passwordResetToken) => {
   }
 }
 
-const changePassword = async (email, oldPassword, newPassword) => {
+const changePassword = async (
+  email,
+  oldPassword,
+  newPassword,
+  authType = 'password'
+) => {
   try {
-    const loginRes = await login(email, oldPassword)
-    if (!loginRes) {
-      return { error: 'Old password is incorrect' }
+    if (authType != 'email') {
+      const loginRes = await login(email, oldPassword)
+      if (!loginRes) {
+        return { error: 'Old password is incorrect' }
+      }
     }
     const hashedPassword = await bcrypt.hash(newPassword, 10)
     const [res] = await conn.query(
@@ -106,12 +113,9 @@ const checkUserAuth = async id => {
   }
 }
 
-const getUserById = async (id) => {
+const getUserById = async id => {
   try {
-    const [rows] = await conn.query(
-      'SELECT * FROM users WHERE id = ? ',
-      [id]
-    )
+    const [rows] = await conn.query('SELECT * FROM users WHERE id = ? ', [id])
     if (rows.length === 0) {
       return null
     }
@@ -125,12 +129,11 @@ const getUserById = async (id) => {
   }
 }
 
-const getUserByEmail = async (email) => {
+const getUserByEmail = async email => {
   try {
-    const [rows] = await conn.query(
-      'SELECT * FROM users WHERE email = ? ',
-      [email]
-    )
+    const [rows] = await conn.query('SELECT * FROM users WHERE email = ? ', [
+      email
+    ])
     if (rows.length === 0) {
       return null
     }
@@ -272,7 +275,7 @@ const getUsersList = async (page = 1, limit = 20, isDeleted = 0) => {
       'SELECT COUNT(*) AS length FROM users WHERE isDeleted = ?',
       [isDeleted ? 1 : 0]
     )
-    return {data: rows, length: count[0]['length']}
+    return { data: rows, length: count[0]['length'] }
   } catch (error) {
     console.error('Error during getting user list:', error)
     throw new Error('Something went wrong')
@@ -299,7 +302,7 @@ const confirmUserEmail = async (id, token) => {
     }
 
     const [res] = await conn.query(
-      'UPDATE users SET isEmailConfirmed = 1, emailConfirmationToken = "" WHERE id = ?',
+      'UPDATE users SET isEmailConfirmed = 1, emailConfirmationToken = "" WHERE id = ? AND isDeleted = 0',
       [id]
     )
     if (res.affectedRows === 0) {
@@ -313,7 +316,7 @@ const confirmUserEmail = async (id, token) => {
   }
 }
 
-const accountInfo = async (id) => {
+const accountInfo = async id => {
   try {
     const [rows] = await conn.query(
       'SELECT * FROM users WHERE id = ? AND isDeleted = 0',

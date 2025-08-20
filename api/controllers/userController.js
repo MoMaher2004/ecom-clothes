@@ -3,8 +3,8 @@ const validators = require('../utils/validators')
 const jwt = require('jsonwebtoken')
 const { sendEmail } = require('../utils/sendEmail')
 
-const createToken = (id, email) => {
-  return jwt.sign({ id, email }, process.env.JWT_SECRET, {
+const createToken = (id, email, authType) => {
+  return jwt.sign({ id, email, authType }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '1h'
   })
 }
@@ -82,18 +82,22 @@ const verifyToken = async (req, res, next) => {
     //     .status(401)
     //     .json({ error: 'Password changed, please login again' })
     // }
-    if (checkUserAuth.isEmailConfirmed == 0 && !(['/resendEmailConfirmationToken', '/confirm-email'].includes(req.route.path))) {
-      return res
-        .status(301)
-        .json({
-          error: 'Email is not confirmed yet',
-          redirect: 'emailConfirmPage'
-        })
+    if (
+      checkUserAuth.isEmailConfirmed == 0 &&
+      !['/resendEmailConfirmationToken', '/confirm-email'].includes(
+        req.route.path
+      )
+    ) {
+      return res.status(301).json({
+        error: 'Email is not confirmed yet',
+        redirect: 'emailConfirmPage'
+      })
     }
     req.user = {
       id: decoded.id,
       email: decoded.email,
-      isAdmin: checkUserAuth.isAdmin
+      isAdmin: checkUserAuth.isAdmin,
+      authType: decoded.authType
     }
     next()
   } catch (error) {
@@ -145,7 +149,7 @@ const login = async (req, res, fromFunction = false) => {
     if (result == null) {
       return res.status(401).json({ error: 'Invalid email or password' })
     }
-    result.token = createToken(result.id, result.email)
+    result.token = createToken(result.id, result.email, 'password')
     saveCookies(res, result.token)
     if (fromFunction) {
       console.log(fromFunction)
@@ -198,6 +202,40 @@ const changePassword = async (req, res) => {
     return res.status(200).json(result)
   } catch (error) {
     console.error('change password error:', error)
+    return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })
+  }
+}
+
+const resetPassword = async (req, res) => {
+  try {
+    const { email, authType } = req.user
+    const { newPassword } = req.body
+
+    if (authType != 'email') {
+      throw new Error('Invalid authType')
+    }
+
+    if (!newPassword || newPassword.length < 8) {
+      return res
+        .status(400)
+        .json({ error: 'New password must be at least 8 characters' })
+    }
+
+    const result = await userModel.changePassword(
+      email,
+      '',
+      newPassword,
+      'email'
+    )
+    if (result.error) {
+      return res.status(400).json({ error: result.error })
+    }
+
+    return res.status(200).json(result)
+  } catch (error) {
+    console.error('resetPassword error:', error)
     return res
       .status(500)
       .json({ error: 'Internal server error, Please try again' })
@@ -505,12 +543,15 @@ const checkPasswordToken = async (req, res) => {
     if (result == null) {
       return res.status(401).json({ error: 'Invalid email or password' })
     }
-    result.token = createToken(result.id, result.email)
+    result.token = createToken(result.id, result.email, 'email')
     saveCookies(res, result.token)
 
     return res
       .status(200)
-      .json({ success: 'Authentication is successful', redirect: 'changePasswordPage' })
+      .json({
+        success: 'Authentication is successful',
+        redirect: 'changePasswordPage'
+      })
   } catch (error) {
     console.error('checkPasswordToken:', error)
     return res
@@ -537,5 +578,6 @@ module.exports = {
   getUserById,
   getUserByEmail,
   sendResetPasswordToken,
-  checkPasswordToken
+  checkPasswordToken,
+  resetPassword
 }
