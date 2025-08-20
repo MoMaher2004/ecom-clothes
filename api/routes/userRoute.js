@@ -10,7 +10,14 @@ const {
     getUsersList,
     resendEmailConfirmationToken,
     confirmUserEmail,
-    logout
+    logout,
+    deleteAccount,
+    restoreUser,
+    accountInfo,
+    getUserById,
+    getUserByEmail,
+    sendResetPasswordToken,
+    checkPasswordToken
 } = require('../controllers/userController')
 
 const router = express.Router()
@@ -30,6 +37,17 @@ router.patch(
   deactivateUser
 )
 router.patch(
+  '/restoreUser',
+  verifyToken,
+  (req, res, next) => adminOnly(req, res, next),
+  restoreUser
+)
+router.delete(
+  '/deleteAccount',
+  verifyToken,
+  deleteAccount
+)
+router.patch(
   '/resendEmailConfirmationToken',
   verifyToken,
   resendEmailConfirmationToken
@@ -45,4 +63,10 @@ router.get('/confirm-email', verifyToken, confirmUserEmail)
 
 router.get('/logout', verifyToken, logout)
 
+router.get('/accountInfo', verifyToken, accountInfo)
+router.get('/getUserById/:id', verifyToken, (req, res, next) => adminOnly(req, res, next), getUserById)
+router.get('/getUserByEmail', verifyToken, (req, res, next) => adminOnly(req, res, next), getUserByEmail)
+
+router.patch('/sendResetPasswordToken', sendResetPasswordToken)
+router.get('/checkPasswordToken', checkPasswordToken)
 module.exports = router

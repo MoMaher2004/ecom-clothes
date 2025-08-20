@@ -24,7 +24,47 @@ const login = async (email, password) => {
       return null
     }
     rows[0].password = undefined
+    rows[0].passwordResetTokenExpiresAt = undefined
+    rows[0].passwordResetToken = undefined
+    rows[0].passwordLastUpdatedAt = undefined
     rows[0].isDeleted = undefined
+    rows[0].emailConfirmationToken = undefined
+    return rows[0]
+  } catch (error) {
+    console.error('Error during login:', error)
+    throw new Error('Something went wrong')
+  }
+}
+
+const checkPasswordToken = async (email, passwordResetToken) => {
+  try {
+    const [rows] = await conn.query(
+      'SELECT * FROM users WHERE email = ? AND isDeleted = 0 AND passwordResetTokenExpiresAt > NOW()',
+      [email]
+    )
+
+    if (rows.length === 0) {
+      return { error: 'Token is not valid or expired, Try again' }
+    }
+    const passwordTokenComparisonRes = await bcrypt.compare(
+      passwordResetToken,
+      rows[0].passwordResetToken
+    )
+    if (!passwordTokenComparisonRes) {
+      return { error: 'Token is not valid or expired, Try again' }
+    }
+
+    await conn.query(
+      'UPDATE users SET passwordResetTokenExpiresAt = NULL, passwordResetToken = NULL WHERE id = ?',
+      [rows[0].id]
+    )
+
+    rows[0].password = undefined
+    rows[0].passwordResetTokenExpiresAt = undefined
+    rows[0].passwordResetToken = undefined
+    rows[0].passwordLastUpdatedAt = undefined
+    rows[0].isDeleted = undefined
+    rows[0].emailConfirmationToken = undefined
     return rows[0]
   } catch (error) {
     console.error('Error during login:', error)
@@ -66,22 +106,40 @@ const checkUserAuth = async id => {
   }
 }
 
-const getUserById = async (id, includeDeleted = false) => {
+const getUserById = async (id) => {
   try {
     const [rows] = await conn.query(
-      'SELECT * FROM users WHERE id = ? ' + includeDeleted
-        ? ''
-        : 'AND isDeleted = 0',
+      'SELECT * FROM users WHERE id = ? ',
       [id]
     )
     if (rows.length === 0) {
       return null
     }
     rows[0].password = undefined
-    rows[0].isDeleted = undefined
+    rows[0].passwordResetToken = undefined
+    rows[0].emailConfirmationToken = undefined
     return rows[0]
   } catch (error) {
     console.error('Error during getting user by id:', error)
+    throw new Error('Something went wrong')
+  }
+}
+
+const getUserByEmail = async (email) => {
+  try {
+    const [rows] = await conn.query(
+      'SELECT * FROM users WHERE email = ? ',
+      [email]
+    )
+    if (rows.length === 0) {
+      return null
+    }
+    rows[0].password = undefined
+    rows[0].passwordResetToken = undefined
+    rows[0].emailConfirmationToken = undefined
+    return rows[0]
+  } catch (error) {
+    console.error('Error getUserByEmail:', error)
     throw new Error('Something went wrong')
   }
 }
@@ -118,6 +176,22 @@ const deactivateUser = async id => {
   }
 }
 
+const restoreUser = async id => {
+  try {
+    const [res] = await conn.query(
+      'UPDATE users SET isDeleted = 0 WHERE id = ?',
+      [id]
+    )
+    if (res.affectedRows === 0) {
+      throw new Error('Failed to restore user')
+    }
+    return { success: 'User restored successfully' }
+  } catch (error) {
+    console.error('Error during restoreUser:', error)
+    throw new Error('Something went wrong')
+  }
+}
+
 const updateEmailConfirmationToken = async email => {
   try {
     const emailConfirmationToken = generateToken()
@@ -135,6 +209,27 @@ const updateEmailConfirmationToken = async email => {
     }
   } catch (error) {
     console.error('Error during updating email confirmation token:', error)
+    throw new Error('Something went wrong')
+  }
+}
+
+const updateResetPasswordToken = async email => {
+  try {
+    const resetPasswordToken = generateToken()
+    const hashedResetPasswordToken = await hashToken(resetPasswordToken)
+    const [res] = await conn.query(
+      'UPDATE users SET passwordResetToken = ?, passwordResetTokenExpiresAt = DATE_ADD(NOW(), INTERVAL 30 MINUTE) WHERE email = ? AND isDeleted = 0',
+      [hashedResetPasswordToken, email]
+    )
+    if (res.affectedRows === 0) {
+      throw new Error('Failed to update Reset Password Token')
+    }
+    return {
+      success: 'Password reset token updated successfully',
+      resetPasswordToken: resetPasswordToken
+    }
+  } catch (error) {
+    console.error('Error during updateResetPasswordToken:', error)
     throw new Error('Something went wrong')
   }
 }
@@ -173,7 +268,11 @@ const getUsersList = async (page = 1, limit = 20, isDeleted = 0) => {
       'SELECT id, firstName, lastName, email, isAdmin FROM users WHERE isDeleted = ? LIMIT ? OFFSET ?',
       [isDeleted ? 1 : 0, limit, offset]
     )
-    return rows
+    const [count] = await conn.query(
+      'SELECT COUNT(*) AS length FROM users WHERE isDeleted = ?',
+      [isDeleted ? 1 : 0]
+    )
+    return {data: rows, length: count[0]['length']}
   } catch (error) {
     console.error('Error during getting user list:', error)
     throw new Error('Something went wrong')
@@ -214,6 +313,28 @@ const confirmUserEmail = async (id, token) => {
   }
 }
 
+const accountInfo = async (id) => {
+  try {
+    const [rows] = await conn.query(
+      'SELECT * FROM users WHERE id = ? AND isDeleted = 0',
+      [id]
+    )
+    if (rows.length === 0) {
+      return null
+    }
+    rows[0].password = undefined
+    rows[0].passwordResetTokenExpiresAt = undefined
+    rows[0].passwordResetToken = undefined
+    rows[0].passwordLastUpdatedAt = undefined
+    rows[0].isDeleted = undefined
+    rows[0].emailConfirmationToken = undefined
+    return rows[0]
+  } catch (error) {
+    console.error('Error during accountInfo:', error)
+    throw new Error('Something went wrong')
+  }
+}
+
 module.exports = {
   login,
   changePassword,
@@ -224,5 +345,10 @@ module.exports = {
   updateEmailConfirmationToken,
   addUser,
   getUsersList,
-  confirmUserEmail
+  confirmUserEmail,
+  restoreUser,
+  accountInfo,
+  getUserByEmail,
+  updateResetPasswordToken,
+  checkPasswordToken
 }

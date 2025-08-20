@@ -237,6 +237,23 @@ const deactivateUser = async (req, res) => {
   }
 }
 
+const restoreUser = async (req, res) => {
+  try {
+    const { id } = req.body
+    if (!id || id <= 0) {
+      return res.status(400).json({ error: 'Valid user ID is required' })
+    }
+    const result = await userModel.restoreUser(id)
+
+    return res.status(200).json(result.success)
+  } catch (error) {
+    console.error('restoreUser error:', error)
+    return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })
+  }
+}
+
 const updateEmailConfirmationToken = async email => {
   try {
     const result = await userModel.updateEmailConfirmationToken(email)
@@ -246,6 +263,19 @@ const updateEmailConfirmationToken = async email => {
     return result
   } catch (error) {
     console.error('updating email token error:', error)
+    throw new Error('unknown error')
+  }
+}
+
+const updateResetPasswordToken = async email => {
+  try {
+    const result = await userModel.updateResetPasswordToken(email)
+    if (!result.success) {
+      throw new Error('unknown error')
+    }
+    return result
+  } catch (error) {
+    console.error('updateResetPasswordToken:', error)
     throw new Error('unknown error')
   }
 }
@@ -268,7 +298,32 @@ const resendEmailConfirmationToken = async (req, res) => {
     }
     return res.status(200).json({ success: 'email was sent successfully' })
   } catch (error) {
-    console.error('add user error:', error)
+    console.error('resendEmailConfirmationToken:', error)
+    return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })
+  }
+}
+
+const sendResetPasswordToken = async (req, res) => {
+  try {
+    const { email } = req.body
+    const result = await updateResetPasswordToken(email)
+    const from = 'support'
+    const subject = 'Reset Password'
+    const message = `click here to reset your password: ${process.env.URL}/user/confirm-email?token=${encodeURIComponent(result.resetPasswordToken)}&email=${encodeURIComponent(email)}`
+    let sendEmailRes
+    try {
+      sendEmailRes = await sendEmail(email, from, subject, message)
+    } catch (error) {
+      console.error('send email error:', error)
+    }
+    if (sendEmailRes.error) {
+      return res.status(400).json({ error: sendEmailRes.error })
+    }
+    return res.status(200).json({ success: 'email was sent successfully' })
+  } catch (error) {
+    console.error('resendResetPasswordToken:', error)
     return res
       .status(500)
       .json({ error: 'Internal server error, Please try again' })
@@ -376,6 +431,94 @@ const getUsersList = async (req, res) => {
   }
 }
 
+const deleteAccount = async (req, res) => {
+  try {
+    const { id } = req.user
+    if (!id || id <= 0) {
+      return res.status(403).json({ error: 'You are not logged in' })
+    }
+    const result = await userModel.deactivateUser(id)
+
+    return res.status(200).json(result.success)
+  } catch (error) {
+    console.error('deleteAccount error:', error)
+    return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })
+  }
+}
+
+const accountInfo = async (req, res) => {
+  try {
+    const { id } = req.user
+    const result = await userModel.accountInfo(id)
+
+    return res.status(200).json(result)
+  } catch (error) {
+    console.error('accountInfo error:', error)
+    return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })
+  }
+}
+
+const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params
+    const result = await userModel.getUserById(id)
+
+    return res.status(200).json(result)
+  } catch (error) {
+    console.error('getUserById error:', error)
+    return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })
+  }
+}
+
+const getUserByEmail = async (req, res) => {
+  try {
+    const { email } = req.query
+    const result = await userModel.getUserByEmail(email)
+
+    return res.status(200).json(result)
+  } catch (error) {
+    console.error('getUserByEmail error:', error)
+    return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })
+  }
+}
+
+const checkPasswordToken = async (req, res) => {
+  try {
+    const { email, token } = req.query
+    if (!email || !token) {
+      return res.status(400).json({ error: 'URL is not valid' })
+    }
+    const result = await userModel.checkPasswordToken(email, token)
+
+    if (result.error) {
+      return res.status(400).json({ error: 'URL is not valid' })
+    }
+
+    if (result == null) {
+      return res.status(401).json({ error: 'Invalid email or password' })
+    }
+    result.token = createToken(result.id, result.email)
+    saveCookies(res, result.token)
+
+    return res
+      .status(200)
+      .json({ success: 'Authentication is successful', redirect: 'changePasswordPage' })
+  } catch (error) {
+    console.error('checkPasswordToken:', error)
+    return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })
+  }
+}
+
 module.exports = {
   login,
   verifyToken,
@@ -387,5 +530,12 @@ module.exports = {
   getUsersList,
   resendEmailConfirmationToken,
   confirmUserEmail,
-  logout
+  logout,
+  deleteAccount,
+  restoreUser,
+  accountInfo,
+  getUserById,
+  getUserByEmail,
+  sendResetPasswordToken,
+  checkPasswordToken
 }
