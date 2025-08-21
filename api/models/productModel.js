@@ -45,7 +45,7 @@ const getProductsList = async (page = 1, limit = 20, isDeleted = false, orderBy 
     }
 
     const [rows] = await conn.query(
-      `SELECT p.*, GROUP_CONCAT(i.fileName) AS images
+      `SELECT p.id, p.name, p.price, p.discount, p.description, p.withNursery, p.amountOfSmallSize, p.amountOfLargeSize, GROUP_CONCAT(i.fileName) AS images
        FROM products p
        JOIN images i ON p.id = i.productId
        WHERE isDeleted = ? 
@@ -60,9 +60,8 @@ const getProductsList = async (page = 1, limit = 20, isDeleted = false, orderBy 
       ] 
     )
     const [count] = await conn.query(
-      `SELECT COUNT(p.id) AS total
-       FROM products p
-       JOIN images i ON p.id = i.productId
+      `SELECT COUNT(id) AS total
+       FROM products
        WHERE isDeleted = ?
        ${withNursery}
        ${filter}`,
@@ -71,7 +70,7 @@ const getProductsList = async (page = 1, limit = 20, isDeleted = false, orderBy 
     if (rows.length === 0) {
       return []
     }
-    return {rows, count}
+    return {rows, count: count[0].total}
   } catch (error) {
     console.error('Error during getProductsList:', error)
     throw new Error('Something went wrong')
