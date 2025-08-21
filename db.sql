@@ -5,12 +5,12 @@ CREATE TABLE
 		lastName VARCHAR(50) NOT NULL CHECK (CHAR_LENGTH(lastName) >= 3),
 		email VARCHAR(255) NOT NULL UNIQUE,
 		password VARCHAR(255) NOT NULL,
-		birthDate DATE,
+		birthDate NOT NULL DATE,
 		isEmailConfirmed BOOLEAN NOT NULL DEFAULT FALSE,
-		emailConfirmationToken VARCHAR(255),
+		emailConfirmationToken NULL VARCHAR(255),
 		passwordLastUpdatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		passwordResetToken VARCHAR(255) NOT NULL DEFAULT '',
-		passwordResetTokenExpiresAt DATETIME,
+		passwordResetToken VARCHAR(255) NULL DEFAULT '',
+		passwordResetTokenExpiresAt NULL DATETIME,
 		isAdmin BOOLEAN NOT NULL DEFAULT FALSE,
 		isDeleted BOOLEAN NOT NULL DEFAULT FALSE,
 		createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -108,6 +108,13 @@ VALUES
 		'2025-08-16 20:38:01',
 		0
 	);
+
+ALTER TABLE users 
+MODIFY passwordResetTokenExpiresAt DATETIME NULL DEFAULT NULL;
+ALTER TABLE users 
+MODIFY passwordResetToken DATETIME NULL DEFAULT NULL;
+
+SELECT * FROM users WHERE email = ?;
 
 -- products
 CREATE TABLE
@@ -287,3 +294,31 @@ INSERT INTO images (productId, fileName) VALUES
 
 (11, 'product-2-1.jpg'),
 (11, 'product-4-2.jpg');
+
+-- orders
+
+CREATE TABLE orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId INT NULL,
+    trackCode VARCHAR(50) NOT NULL UNIQUE,
+    government VARCHAR(100) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    address TEXT NOT NULL,
+    otherInfo TEXT DEFAULT NULL,
+    phoneNumber VARCHAR(20) NOT NULL,
+    secondPhoneNumber VARCHAR(20),
+    status ENUM('Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled') DEFAULT 'Pending',
+    shipmentCost DECIMAL(6, 2) NOT NULL DEFAULT 0.00,
+    issuedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_orders_users FOREIGN KEY (userId) REFERENCES users(id) ON DELETE SET NULL
+);
+
+INSERT INTO orders 
+(userId, trackCode, government, city, address, otherInfo, phoneNumber, secondPhoneNumber, status, shipmentCost)
+VALUES
+(1, 'TRK1001', 'Cairo', 'Nasr City', '12 Abbas El Akkad St.', 'Leave with the doorman', '01001234567', '01122334455', 'Pending', 50.00),
+(2, 'TRK1002', 'Giza', 'Dokki', '45 Tahrir St.', NULL, '01007654321', NULL, 'Processing', 30.00),
+(NULL, 'TRK1003', 'Alexandria', 'Smouha', '23 El Horreya Rd.', 'Call before delivery', '01234567890', '01555555555', 'Shipped', 70.00),
+(3, 'TRK1004', 'Dakahlia', 'Mansoura', 'El Gomhoria St., near Faculty of Medicine', NULL, '01099887766', NULL, 'Delivered', 10.00),
+(NULL, 'TRK1005', 'Sharqia', 'Zagazig', 'Mostafa Kamel St., 3rd floor', 'Ring the bell twice', '01033445566', '01211223344', 'Cancelled', 0.00);
