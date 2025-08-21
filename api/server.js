@@ -4,6 +4,7 @@ dotenv.config({ path: './config.env' })
 const express = require('express')
 const userRoute = require('./routes/userRoute')
 const productRoute = require('./routes/productRoute')
+const cartRoute = require('./routes/cartRoute')
 const cors = require('cors')
 const path = require('path')
 const fs = require('fs')
@@ -26,6 +27,7 @@ app.use(express.urlencoded({ extended: true }))
 
 app.use('/api/user', userRoute)
 app.use('/api/product', productRoute)
+app.use('/api/cart', cartRoute)
 
 const port = process.env.PORT || 3000
 

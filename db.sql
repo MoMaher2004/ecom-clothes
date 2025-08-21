@@ -112,7 +112,7 @@ VALUES
 ALTER TABLE users 
 MODIFY passwordResetTokenExpiresAt DATETIME NULL DEFAULT NULL;
 ALTER TABLE users 
-MODIFY passwordResetToken DATETIME NULL DEFAULT NULL;
+MODIFY passwordResetToken VARCHAR(255) NULL DEFAULT NULL;
 
 SELECT * FROM users WHERE email = ?;
 
@@ -322,3 +322,40 @@ VALUES
 (NULL, 'TRK1003', 'Alexandria', 'Smouha', '23 El Horreya Rd.', 'Call before delivery', '01234567890', '01555555555', 'Shipped', 70.00),
 (3, 'TRK1004', 'Dakahlia', 'Mansoura', 'El Gomhoria St., near Faculty of Medicine', NULL, '01099887766', NULL, 'Delivered', 10.00),
 (NULL, 'TRK1005', 'Sharqia', 'Zagazig', 'Mostafa Kamel St., 3rd floor', 'Ring the bell twice', '01033445566', '01211223344', 'Cancelled', 0.00);
+
+-- carts
+
+CREATE TABLE carts (
+    userId INT NOT NULL,
+    productId INT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    PRIMARY KEY (userId, productId),
+    FOREIGN KEY (userId) REFERENCES users(id),
+    FOREIGN KEY (productId) REFERENCES products(id)
+);
+
+INSERT INTO carts (userId, productId, quantity)
+SELECT u.userId, p.productId, FLOOR(1 + (RAND() * 5)) AS quantity
+FROM (
+    SELECT 1 AS userId UNION ALL
+    SELECT 2 UNION ALL
+    SELECT 3 UNION ALL
+    SELECT 4 UNION ALL
+    SELECT 9 UNION ALL
+    SELECT 10
+) AS u
+JOIN (
+    SELECT 1 AS productId UNION ALL
+    SELECT 2 UNION ALL
+    SELECT 3 UNION ALL
+    SELECT 4 UNION ALL
+    SELECT 5 UNION ALL
+    SELECT 6 UNION ALL
+    SELECT 7 UNION ALL
+    SELECT 8 UNION ALL
+    SELECT 9 UNION ALL
+    SELECT 10 UNION ALL
+    SELECT 11
+) AS p
+ORDER BY RAND()
+LIMIT 30;
