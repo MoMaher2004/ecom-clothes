@@ -38,12 +38,6 @@ router.patch(
   (req, res, next) => adminOnly(req, res, next),
   deactivateUser
 )
-router.patch(
-  '/restoreUser',
-  verifyToken,
-  (req, res, next) => adminOnly(req, res, next),
-  restoreUser
-)
 router.delete(
   '/deleteAccount',
   verifyToken,

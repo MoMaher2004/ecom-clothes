@@ -179,22 +179,6 @@ const deactivateUser = async id => {
   }
 }
 
-const restoreUser = async id => {
-  try {
-    const [res] = await conn.query(
-      'UPDATE users SET isDeleted = 0 WHERE id = ?',
-      [id]
-    )
-    if (res.affectedRows === 0) {
-      throw new Error('Failed to restore user')
-    }
-    return { success: 'User restored successfully' }
-  } catch (error) {
-    console.error('Error during restoreUser:', error)
-    throw new Error('Something went wrong')
-  }
-}
-
 const updateEmailConfirmationToken = async email => {
   try {
     const emailConfirmationToken = generateToken()
@@ -349,7 +333,6 @@ module.exports = {
   addUser,
   getUsersList,
   confirmUserEmail,
-  restoreUser,
   accountInfo,
   getUserByEmail,
   updateResetPasswordToken,

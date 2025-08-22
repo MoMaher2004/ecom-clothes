@@ -275,23 +275,6 @@ const deactivateUser = async (req, res) => {
   }
 }
 
-const restoreUser = async (req, res) => {
-  try {
-    const { id } = req.body
-    if (!id || id <= 0) {
-      return res.status(400).json({ error: 'Valid user ID is required' })
-    }
-    const result = await userModel.restoreUser(id)
-
-    return res.status(200).json(result.success)
-  } catch (error) {
-    console.error('restoreUser error:', error)
-    return res
-      .status(500)
-      .json({ error: 'Internal server error, Please try again' })
-  }
-}
-
 const updateEmailConfirmationToken = async email => {
   try {
     const result = await userModel.updateEmailConfirmationToken(email)
@@ -563,6 +546,7 @@ const checkPasswordToken = async (req, res) => {
 module.exports = {
   login,
   verifyToken,
+  verifyJWT,
   adminOnly,
   changePassword,
   updateUserRole,
@@ -573,7 +557,6 @@ module.exports = {
   confirmUserEmail,
   logout,
   deleteAccount,
-  restoreUser,
   accountInfo,
   getUserById,
   getUserByEmail,
