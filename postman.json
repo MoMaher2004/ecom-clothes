@@ -23,10 +23,20 @@
 								}
 							},
 							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{base_url}}/api/product/getProductsList?page=1&limit=2&orderBy=newAdded&withNursery=yes",
+									"raw": "{{base_url}}/api/product/getProductsList?page=1&limit=10&orderBy=newAdded&withNursery=yes",
 									"host": [
 										"{{base_url}}"
 									],
@@ -42,7 +52,7 @@
 										},
 										{
 											"key": "limit",
-											"value": "2"
+											"value": "10"
 										},
 										{
 											"key": "orderBy",
@@ -1029,46 +1039,6 @@
 					"response": []
 				},
 				{
-					"name": "viewCartAsAdmin",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/cart/viewCartAsAdmin/10?page=1&limit=20",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"cart",
-								"viewCartAsAdmin",
-								"10"
-							],
-							"query": [
-								{
-									"key": "page",
-									"value": "1"
-								},
-								{
-									"key": "limit",
-									"value": "20"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "add item",
 					"request": {
 						"auth": {
@@ -1085,7 +1055,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"productId\": 2,\n    \"quantity\": 3\n}",
+							"raw": "{\n    \"productId\": 2,\n    \"smallQuantity\": 1,\n    \"largeQuantity\": 1\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1122,7 +1092,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/cart/deleteItem?productId=2&quantity=2",
+							"raw": "{{base_url}}/api/cart/deleteItem?productId=2",
 							"host": [
 								"{{base_url}}"
 							],
@@ -1135,9 +1105,162 @@
 								{
 									"key": "productId",
 									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "wishlists",
+			"item": [
+				{
+					"name": "viewWishlist",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/wishlist/viewWishlist?page=1&limit=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"wishlist",
+								"viewWishlist"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
 								},
 								{
-									"key": "quantity",
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "viewWishlistAsAdmin",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/wishlist/viewWishlistAsAdmin/10?page=1&limit=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"wishlist",
+								"viewWishlistAsAdmin",
+								"10"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "add item",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": 4\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/wishlist/addItem",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"wishlist",
+								"addItem"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete item",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/wishlist/deleteItem?productId=2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"wishlist",
+								"deleteItem"
+							],
+							"query": [
+								{
+									"key": "productId",
 									"value": "2"
 								}
 							]
