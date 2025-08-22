@@ -19,7 +19,7 @@ const deleteItem = async (req, res) => {
   try {
     const { id } = req.user
     const productId = parseInt(req.query.productId)
-    if (isNaN(productId) || productId <= 1) {
+    if (isNaN(productId) || productId < 1) {
       return res.status(400).json({ error: 'Enter a valid ID' })
     }
     await wishlistModel.deleteItem(id, productId)
