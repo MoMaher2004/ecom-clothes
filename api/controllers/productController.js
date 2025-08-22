@@ -3,11 +3,27 @@ const productModel = require('../models/productModel')
 const va = require('../utils/validators')
 const fs = require('fs').promises
 const path = require('path')
+const {verifyJWT} = require('./userController')
 
 const getProductsList = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1
     const limit = parseInt(req.query.limit) || 10
+    
+    let userId
+    if (!req.headers['authorization']){
+      userId = 0
+    } else {
+      try {
+        const token = req.headers['authorization'].split(' ')[1]
+        const decoded = await verifyJWT(token, process.env.JWT_SECRET)
+        userId = decoded.id
+      } catch (error) {
+        console.log(error)
+        userId = 0
+      }
+    }
+    
     const orderBy = ['', 'newAdded', 'mostBought'].includes(req.query.orderBy)
       ? req.query.orderBy
       : ''
@@ -22,7 +38,8 @@ const getProductsList = async (req, res) => {
       limit,
       false,
       orderBy,
-      withNursery
+      withNursery,
+      userId
     )
 
     if (products.length === 0) {
@@ -63,10 +80,23 @@ const getDeletedProductsList = async (req, res) => {
 const getProductById = async (req, res) => {
   try {
     const id = parseInt(req.params.id)
+
+    let userId
+    if (!req.headers['authorization']){
+      userId = 0
+    } else {
+      try {
+        const decoded = await verifyJWT(token, process.env.JWT_SECRET)
+        userId = decoded.id
+      } catch (error) {
+        userId = 0
+      }
+    }
+    
     if (isNaN(id) || id < 1) {
       return res.status(404).json({ error: 'Product not found' })
     }
-    const product = await productModel.getProductById(id)
+    const product = await productModel.getProductById(id, userId = userId)
 
     if (!product) {
       return res.status(404).json({ error: 'Product not found' })

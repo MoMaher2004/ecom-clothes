@@ -1,15 +1,38 @@
 const conn = require('../config/db')
 
-const getProductById = async (id, allowDeleted = false) => {
+const getProductById = async (id, allowDeleted = false, userId = 0) => {
   try {
     const [rows] = await conn.query(
-      `SELECT p.*, GROUP_CONCAT(i.fileName) AS images
-       FROM products p
-       JOIN images i ON p.id = i.productId
-       WHERE p.id = ? ` 
-       + (allowDeleted ? '' : ' AND p.isDeleted = 0 ') +
-       `GROUP BY p.id`,
-      [id]
+      `SELECT 
+    p.id, 
+    p.name, 
+    p.price, 
+    p.discount, 
+    p.description, 
+    p.withNursery, 
+    p.amountOfSmallSize, 
+    p.amountOfLargeSize, 
+    GROUP_CONCAT(i.fileName) AS images,
+    CASE WHEN c.productId IS NOT NULL THEN c.smallQuantity ELSE 0 END AS smallQuantity,
+    CASE WHEN c.productId IS NOT NULL THEN c.largeQuantity ELSE 0 END AS largeQuantity,
+    CASE WHEN w.productId IS NOT NULL THEN TRUE ELSE FALSE END AS wishlist
+FROM products p
+LEFT JOIN images i ON p.id = i.productId
+LEFT JOIN wishlists w ON w.userId = ? AND w.productId = p.id
+LEFT JOIN carts c ON c.userId = ? AND c.productId = p.id
+WHERE p.id = ?
+       ${allowDeleted ? '' : ' AND p.isDeleted = 0 '}
+GROUP BY 
+    p.id, 
+    p.name, 
+    p.price, 
+    p.discount, 
+    p.description, 
+    p.withNursery, 
+    p.amountOfSmallSize, 
+    p.amountOfLargeSize
+      `,
+      [userId, userId, id]
     )
     if (rows.length === 0) {
       return null
@@ -22,7 +45,14 @@ const getProductById = async (id, allowDeleted = false) => {
   }
 }
 
-const getProductsList = async (page = 1, limit = 20, isDeleted = false, orderBy = false, nursery = null) => {
+const getProductsList = async (
+  page = 1,
+  limit = 20,
+  isDeleted = false,
+  orderBy = false,
+  nursery = null,
+  id = 0
+) => {
   try {
     const offset = (page - 1) * limit
     let filter
@@ -35,29 +65,46 @@ const getProductsList = async (page = 1, limit = 20, isDeleted = false, orderBy 
       filter = ''
     }
     let withNursery
-    if (nursery == 'yes'){
+    if (nursery == 'yes') {
       withNursery = 'AND withNursery = 1'
-    }
-    else if (nursery == 'no'){
+    } else if (nursery == 'no') {
       withNursery = 'AND withNursery = 0'
     } else {
       withNursery = ''
     }
 
     const [rows] = await conn.query(
-      `SELECT p.id, p.name, p.price, p.discount, p.description, p.withNursery, p.amountOfSmallSize, p.amountOfLargeSize, GROUP_CONCAT(i.fileName) AS images
-       FROM products p
-       JOIN images i ON p.id = i.productId
-       WHERE isDeleted = ? 
+      `SELECT 
+    p.id, 
+    p.name, 
+    p.price, 
+    p.discount, 
+    p.description, 
+    p.withNursery, 
+    p.amountOfSmallSize, 
+    p.amountOfLargeSize, 
+    GROUP_CONCAT(i.fileName) AS images,
+    CASE WHEN c.productId IS NOT NULL THEN c.smallQuantity ELSE 0 END AS smallQuantity,
+    CASE WHEN c.productId IS NOT NULL THEN c.largeQuantity ELSE 0 END AS largeQuantity,
+    CASE WHEN w.productId IS NOT NULL THEN TRUE ELSE FALSE END AS wishlist
+FROM products p
+LEFT JOIN images i ON p.id = i.productId
+LEFT JOIN wishlists w ON w.userId = ? AND w.productId = p.id
+LEFT JOIN carts c ON c.userId = ? AND c.productId = p.id
+WHERE p.isDeleted = ?
        ${withNursery}
-       GROUP BY p.id
-       ${filter}
+GROUP BY 
+    p.id, 
+    p.name, 
+    p.price, 
+    p.discount, 
+    p.description, 
+    p.withNursery, 
+    p.amountOfSmallSize, 
+    p.amountOfLargeSize
+    ${filter}
        LIMIT ? OFFSET ?`,
-      [
-        isDeleted ? 1 : 0,
-        limit,
-        offset
-      ] 
+      [id, id, isDeleted ? 1 : 0, limit, offset]
     )
     const [count] = await conn.query(
       `SELECT COUNT(id) AS total
@@ -70,7 +117,7 @@ const getProductsList = async (page = 1, limit = 20, isDeleted = false, orderBy 
     if (rows.length === 0) {
       return []
     }
-    return {rows, count: count[0].total}
+    return { rows, count: count[0].total }
   } catch (error) {
     console.error('Error during getProductsList:', error)
     throw new Error('Something went wrong')
@@ -117,7 +164,7 @@ const editProduct = async (
   discount,
   description,
   amountOfSmallSize,
-  amountOfLargeSize,
+  amountOfLargeSize
 ) => {
   try {
     const [res] = await conn.query(
@@ -128,14 +175,7 @@ const editProduct = async (
         amountOfSmallSize = ?,
         amountOfLargeSize = ?
         WHERE id = ?`,
-      [
-        price,
-        discount,
-        description,
-        amountOfSmallSize,
-        amountOfLargeSize,
-        id
-      ]
+      [price, discount, description, amountOfSmallSize, amountOfLargeSize, id]
     )
     if (res.affectedRows === 0) {
       throw new Error('Something went wrong')
@@ -195,12 +235,11 @@ const uploadImages = async (getProductById, fileName) => {
   }
 }
 
-const deleteImage = async (fileName) => {
+const deleteImage = async fileName => {
   try {
-    const [res] = await conn.query(
-      `DELETE FROM images WHERE fileName = ?`,
-      [fileName]
-    )
+    const [res] = await conn.query(`DELETE FROM images WHERE fileName = ?`, [
+      fileName
+    ])
     if (res.affectedRows === 0) {
       throw new Error('Something went wrong')
     }

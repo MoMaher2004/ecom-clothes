@@ -3,15 +3,23 @@ const { verifyToken, adminOnly } = require('../controllers/userController')
 const {
     addItem,
     deleteItem,
-    viewCart
-} = require('../controllers/cartController')
+    viewWishlist,
+    viewWishlistAsAdmin
+} = require('../controllers/wishlistController')
 
 const router = express.Router()
 
 router.get(
-  '/viewCart',
+  '/viewWishlist',
   verifyToken,
-  viewCart
+  viewWishlist
+)
+
+router.get(
+  '/viewWishlistAsAdmin/:id',
+  verifyToken,
+  adminOnly,
+  viewWishlistAsAdmin
 )
 
 router.post(

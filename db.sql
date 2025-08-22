@@ -328,14 +328,52 @@ VALUES
 CREATE TABLE carts (
     userId INT NOT NULL,
     productId INT NOT NULL,
-    quantity INT NOT NULL DEFAULT 1,
+    smallQuantity INT NOT NULL DEFAULT 0,
+    largeQuantity INT NOT NULL DEFAULT 0,
     PRIMARY KEY (userId, productId),
     FOREIGN KEY (userId) REFERENCES users(id),
     FOREIGN KEY (productId) REFERENCES products(id)
 );
 
-INSERT INTO carts (userId, productId, quantity)
-SELECT u.userId, p.productId, FLOOR(1 + (RAND() * 5)) AS quantity
+INSERT INTO carts (userId, productId, smallQuantity, largeQuantity)
+SELECT u.userId, p.productId, FLOOR(1 + (RAND() * 5)) AS smallQuantity  FLOOR(1 + (RAND() * 5)) AS largeQuantity
+FROM (
+    SELECT 1 AS userId UNION ALL
+    SELECT 2 UNION ALL
+    SELECT 3 UNION ALL
+    SELECT 4 UNION ALL
+    SELECT 9 UNION ALL
+    SELECT 10
+) AS u
+JOIN (
+    SELECT 1 AS productId UNION ALL
+    SELECT 2 UNION ALL
+    SELECT 3 UNION ALL
+    SELECT 4 UNION ALL
+    SELECT 5 UNION ALL
+    SELECT 6 UNION ALL
+    SELECT 7 UNION ALL
+    SELECT 8 UNION ALL
+    SELECT 9 UNION ALL
+    SELECT 10 UNION ALL
+    SELECT 11
+) AS p
+ORDER BY RAND()
+LIMIT 30;
+
+
+-- wishlists
+
+CREATE TABLE wishlists (
+    userId INT NOT NULL,
+    productId INT NOT NULL,
+    PRIMARY KEY (userId, productId),
+    FOREIGN KEY (userId) REFERENCES users(id),
+    FOREIGN KEY (productId) REFERENCES products(id)
+);
+
+INSERT INTO wishlists (userId, productId)
+SELECT u.userId, p.productId
 FROM (
     SELECT 1 AS userId UNION ALL
     SELECT 2 UNION ALL

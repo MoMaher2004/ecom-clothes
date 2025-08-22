@@ -1,12 +1,11 @@
 const conn = require('../config/db')
 
-const addItem = async (id, productId, smallQuantity, largeQuantity) => {
+const addItem = async (id, productId) => {
   try {
     const [res] = await conn.query(
-      `INSERT INTO carts (userId, productId, smallQuantity, largeQuantity)
-        VALUES (?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE smallQuantity = ?, largeQuantity = ?`,
-      [id, productId, smallQuantity, largeQuantity, smallQuantity, largeQuantity]
+      `INSERT INTO wishlists (userId, productId)
+        VALUES (?, ?)`,
+      [id, productId]
     )
     if (res.affectedRows === 0) {
       throw new Error('Something went wrong')
@@ -21,10 +20,10 @@ const addItem = async (id, productId, smallQuantity, largeQuantity) => {
 const deleteItem = async (id, productId) => {
   try {
     await conn.query(
-      `DELETE FROM carts
+      `DELETE FROM wishlists
         WHERE userId = ? AND productId = ?`,
       [id, productId]
-    )    
+    )
     return { success: 'Item was deleted successfully' }
   } catch (error) {
     console.error('Error during deleteItem:', error)
@@ -32,13 +31,11 @@ const deleteItem = async (id, productId) => {
   }
 }
 
-const viewCart = async (id, page = 1, limit = 20) => {
+const viewWishlist = async (id, page = 1, limit = 20) => {
   try {
     const offset = (page - 1) * limit
     const [rows] = await conn.query(
         `SELECT 
-            c.smallQuantity, 
-            c.largeQuantity, 
             p.id, 
             p.name, 
             p.price, 
@@ -48,11 +45,11 @@ const viewCart = async (id, page = 1, limit = 20) => {
             p.amountOfSmallSize, 
             p.amountOfLargeSize, 
             GROUP_CONCAT(i.fileName) AS images 
-          FROM carts c
+          FROM wishlists c
           LEFT JOIN products p ON c.productId = p.id 
           LEFT JOIN images i ON c.productId = i.productId 
           WHERE c.userId = ? AND p.isDeleted = 0
-          GROUP BY c.smallQuantity, c.largeQuantity, p.id, p.name, p.price, p.discount, 
+          GROUP BY p.id, p.name, p.price, p.discount, 
                    p.description, p.withNursery, p.amountOfSmallSize, 
                    p.amountOfLargeSize
           LIMIT ? OFFSET ?`,
@@ -60,19 +57,17 @@ const viewCart = async (id, page = 1, limit = 20) => {
       )
 
     if (rows.length == 0) {
-      return { rows: [], totalPrice: 0, length: 0 }
+      return { rows: [], length: 0 }
     }
 
     const [metaData] = await conn.query(
-        `SELECT 
-            SUM((c.largeQuantity + c.smallQuantity) * (p.price * (1 - p.discount / 100))) AS totalPrice, 
-            COUNT(*) AS length 
-         FROM carts c
+        `SELECT COUNT(*) AS length 
+         FROM wishlists c
          LEFT JOIN products p ON c.productId = p.id 
          WHERE c.userId = ? AND p.isDeleted = 0`,
         [id]
       )
-    return { rows, totalPrice: metaData[0].totalPrice, length: metaData[0].length }
+    return { rows, length: metaData[0].length }
   } catch (error) {
     console.error('Error during deleteItem:', error)
     throw new Error('Something went wrong')
@@ -82,5 +77,5 @@ const viewCart = async (id, page = 1, limit = 20) => {
 module.exports = {
   addItem,
   deleteItem,
-  viewCart
+  viewWishlist
 }
