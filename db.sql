@@ -465,3 +465,15 @@ INSERT INTO items (orderId, productId, quantity, pricePerUnit, size) VALUES
   (6,  6, 1, 159.00, 'small'),
   (7,  8, 4,  25.00, 'small'),
   (8, 10, 1, 499.99, 'large');
+
+-- offers
+CREATE TABLE offers (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  badge VARCHAR(255) NULL DEFAULT NULL,
+  subTitle VARCHAR(255) NULL DEFAULT NULL,
+  oldPrice DECIMAL(10,2) NOT NULL,
+  discount DECIMAL(4,2) NOT NULL,
+  endTime TIMESTAMP NOT NULL,
+  url VARCHAR(255) NOT NULL
+)
