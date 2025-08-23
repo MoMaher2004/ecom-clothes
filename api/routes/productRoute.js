@@ -35,7 +35,7 @@ router.patch('/editProduct/:id', verifyToken, adminOnly, editProduct)
 router.delete('/deleteProduct/:id', verifyToken, adminOnly, deleteProduct)
 router.patch('/restoreProduct/', verifyToken, adminOnly, restoreProduct)
 
-router.post('/uploadImage', verifyToken, adminOnly, imagesUtils.uploadImages.array('images', 10), uploadImages)
+router.post('/uploadImages', verifyToken, adminOnly, imagesUtils.uploadImages.array('images', 10), uploadImages)
 router.delete('/deleteImage/:imageName', verifyToken, adminOnly, deleteImage)
 
 module.exports = router
