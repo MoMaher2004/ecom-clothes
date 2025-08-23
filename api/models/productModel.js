@@ -151,7 +151,7 @@ const addProduct = async (
     if (res.affectedRows === 0) {
       throw new Error('Something went wrong')
     }
-    return { success: 'Product added successfully' }
+    return { productId: res.insertId }
   } catch (error) {
     console.error('Error during addProduct:', error)
     throw new Error('Something went wrong')
@@ -203,21 +203,21 @@ const deleteProduct = async id => {
   }
 }
 
-const restoreProduct = async id => {
-  try {
-    const [res] = await conn.query(
-      `UPDATE products SET isDeleted = 0 WHERE id = ?`,
-      [id]
-    )
-    if (res.affectedRows === 0) {
-      throw new Error('Something went wrong')
-    }
-    return { success: 'Product restore successfully' }
-  } catch (error) {
-    console.error('Error during restoreProduct:', error)
-    throw new Error('Something went wrong')
-  }
-}
+// const restoreProduct = async id => {
+//   try {
+//     const [res] = await conn.query(
+//       `UPDATE products SET isDeleted = 0 WHERE id = ?`,
+//       [id]
+//     )
+//     if (res.affectedRows === 0) {
+//       throw new Error('Something went wrong')
+//     }
+//     return { success: 'Product restore successfully' }
+//   } catch (error) {
+//     console.error('Error during restoreProduct:', error)
+//     throw new Error('Something went wrong')
+//   }
+// }
 
 const uploadImages = async (getProductById, fileName) => {
   try {

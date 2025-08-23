@@ -181,7 +181,7 @@ const addProduct = async (req, res) => {
       return res.status(400).json({ error: result.error })
     }
 
-    return res.status(201).json({ success: 'Product was added successfully' })
+    return res.status(201).json({ success: 'Product was added successfully', productId: res.productId })
   } catch (error) {
     console.error('addProduct error:', error)
     return res
@@ -266,23 +266,23 @@ const deleteProduct = async (req, res) => {
   }
 }
 
-const restoreProduct = async (req, res) => {
-  try {
-    const id = parseInt(req.query.id)
-    if (isNaN(id) || id <= 0) {
-      return res.status(400).json({ error: 'Valid product ID is required' })
-    }
-    await productModel.restoreProduct(id)
-    return res
-      .status(200)
-      .json({ success: 'Product was restored successfully' })
-  } catch (error) {
-    console.error('restoreProduct error:', error)
-    return res
-      .status(500)
-      .json({ error: 'Internal server error, Please try again' })
-  }
-}
+// const restoreProduct = async (req, res) => {
+//   try {
+//     const id = parseInt(req.query.id)
+//     if (isNaN(id) || id <= 0) {
+//       return res.status(400).json({ error: 'Valid product ID is required' })
+//     }
+//     await productModel.restoreProduct(id)
+//     return res
+//       .status(200)
+//       .json({ success: 'Product was restored successfully' })
+//   } catch (error) {
+//     console.error('restoreProduct error:', error)
+//     return res
+//       .status(500)
+//       .json({ error: 'Internal server error, Please try again' })
+//   }
+// }
 
 const uploadImages = async (req, res) => {
   try {
