@@ -336,7 +336,7 @@ CREATE TABLE carts (
 );
 
 INSERT INTO carts (userId, productId, smallQuantity, largeQuantity)
-SELECT u.userId, p.productId, FLOOR(1 + (RAND() * 5)) AS smallQuantity  FLOOR(1 + (RAND() * 5)) AS largeQuantity
+SELECT u.userId, p.productId, FLOOR(1 + (RAND() * 5)) AS smallQuantity, FLOOR(1 + (RAND() * 5)) AS largeQuantity
 FROM (
     SELECT 1 AS userId UNION ALL
     SELECT 2 UNION ALL
@@ -397,3 +397,99 @@ JOIN (
 ) AS p
 ORDER BY RAND()
 LIMIT 30;
+
+
+-- deleveryConsts
+DROP TABLE IF EXISTS deleveryCosts;
+CREATE TABLE deleveryCosts (
+  government VARCHAR(100) PRIMARY KEY,
+  cost DECIMAL(6,2)    NOT NULL
+);
+
+INSERT INTO deleveryCosts (government, cost) VALUES
+  ('Alexandria',      60.00),
+  ('Aswan',           80.00),
+  ('Assiut',          80.00),
+  ('Beheira',         55.00),
+  ('Beni Suef',       65.00),
+  ('Cairo',           50.00),
+  ('Dakahlia',        30.00),
+  ('Damietta',        45.00),
+  ('Fayoum',          40.00),
+  ('Gharbia',         35.00),
+  ('Giza',            40.00),
+  ('Ismailia',        48.00),
+  ('Kafr El Sheikh',  42.00),
+  ('Luxor',           90.00),
+  ('Matrouh',         75.00),
+  ('Minya',           65.00),
+  ('Monufia',         33.00),
+  ('New Valley',     120.00),
+  ('North Sinai',    110.00),
+  ('Port Said',       70.00),
+  ('Qalyubia',        35.00),
+  ('Qena',            85.00),
+  ('Red Sea',        130.00),
+  ('Sharqia',         45.00),
+  ('Sohag',           75.00),
+  ('South Sinai',    140.00),
+  ('Suez',            95.00);
+
+
+
+-- orders
+DROP TABLE IF EXISTS orders;
+CREATE TABLE orders (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  userId INT NULL,
+  trackCode VARCHAR(50) NULL UNIQUE,
+  government VARCHAR(100) NOT NULL,
+  city VARCHAR(100) NOT NULL,
+  address TEXT NOT NULL,
+  phoneNumber VARCHAR(20) NOT NULL,
+  secondPhoneNumber VARCHAR(20),
+  status ENUM('Pending','Processing','Shipped','Delivered','Cancelled') DEFAULT 'Pending',
+  issuedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  notes TEXT DEFAULT NULL,
+  zipCode VARCHAR(20),
+  deleveryCost DECIMAL(6,2) NOT NULL DEFAULT 0.00,
+  CONSTRAINT fk_orders_users FOREIGN KEY (userId) REFERENCES users(id) ON DELETE SET NULL
+);
+
+INSERT INTO orders (id, userId, trackCode, government, city, address, phoneNumber, secondPhoneNumber, status, notes, zipCode, deleveryCost)
+VALUES
+  (1,  1, 'TRK-0001', 'Cairo',      'Nasr City',  '12 Abbas El Akkad St.',                       '01001234567', '01122334455', 'Pending',    'Leave with doorman', '11765', (SELECT cost FROM deleveryCosts WHERE government = 'Cairo' LIMIT 1)),
+  (2,  2, 'TRK-0002', 'Giza',       'Dokki',      '45 Tahrir St.',                               '01007654321', NULL,           'Processing', NULL,                 '12611', (SELECT cost FROM deleveryCosts WHERE government = 'Giza' LIMIT 1)),
+  (3,  3, 'TRK-0003', 'Alexandria', 'Smouha',     '23 El Horreya Rd.',                           '01234567890', '01555555555', 'Shipped',    'Call before delivery', '21532', (SELECT cost FROM deleveryCosts WHERE government = 'Alexandria' LIMIT 1)),
+  (4,  4, 'TRK-0004', 'Dakahlia',   'Mansoura',   'El Gomhoria St., near Faculty of Medicine',  '01099887766', NULL,           'Delivered',  NULL,                 '35511', (SELECT cost FROM deleveryCosts WHERE government = 'Dakahlia' LIMIT 1)),
+  (5,  9, 'TRK-0005', 'Sharqia',    'Zagazig',    'Mostafa Kamel St., 3rd floor',                '01033445566', '01211223344', 'Cancelled',  'Customer requested hold', '44555', (SELECT cost FROM deleveryCosts WHERE government = 'Sharqia' LIMIT 1)),
+  (6, 10, 'TRK-0006', 'Qalyubia',   'Shubra',     '5 El-Mansour St.',                            '01055556666', NULL,           'Pending',    NULL,                 '13311', (SELECT cost FROM deleveryCosts WHERE government = 'Qalyubia' LIMIT 1)),
+  (7,  1, 'TRK-0007', 'Beheira',    'Damanhour',  'Street 10, Building 4',                       '01144443332', NULL,           'Processing', 'Deliver after 6pm',  '22512', (SELECT cost FROM deleveryCosts WHERE government = 'Beheira' LIMIT 1)),
+  (8,  2, 'TRK-0008', 'Minya',      'Minya',      'Al-Mahatta St., apt 2',                       '01077778888', NULL,           'Shipped',    NULL,                 '61513', (SELECT cost FROM deleveryCosts WHERE government = 'Minya' LIMIT 1));
+
+
+-- items
+
+CREATE TABLE items (
+  orderId INT NOT NULL,
+  productId INT NOT NULL,
+  quantity INT NOT NULL DEFAULT 1,
+  pricePerUnit DECIMAL(10,2) NOT NULL,
+  size ENUM('small','large') NOT NULL DEFAULT 'small',
+  PRIMARY KEY (orderId, productId, size),
+  CONSTRAINT fk_items_orders    FOREIGN KEY (orderId)   REFERENCES orders(id)   ON DELETE CASCADE,
+  CONSTRAINT fk_items_products  FOREIGN KEY (productId) REFERENCES products(id) ON DELETE RESTRICT
+);
+
+INSERT INTO items (orderId, productId, quantity, pricePerUnit, size) VALUES
+  (1,  1, 2, 199.99, 'small'),
+  (1,  3, 1,  49.50, 'large'),
+  (2,  2, 1, 129.00, 'small'),
+  (3,  5, 3,  39.99, 'small'),
+  (3,  7, 1, 349.00, 'large'),
+  (4, 11, 1,  89.90, 'large'),
+  (5,  4, 2,  59.00, 'small'),
+  (6,  6, 1, 159.00, 'small'),
+  (7,  8, 4,  25.00, 'small'),
+  (8, 10, 1, 499.99, 'large');
