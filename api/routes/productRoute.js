@@ -8,7 +8,7 @@ const {
   addProduct,
   editProduct,
   deleteProduct,
-  restoreProduct,
+  // restoreProduct,
   deleteImage,
   uploadImages
 } = require('../controllers/productController')

@@ -256,7 +256,7 @@ module.exports = {
   addProduct,
   editProduct,
   deleteProduct,
-  restoreProduct,
+  // restoreProduct,
   uploadImages,
   deleteImage
 }

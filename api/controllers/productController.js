@@ -181,7 +181,7 @@ const addProduct = async (req, res) => {
       return res.status(400).json({ error: result.error })
     }
 
-    return res.status(201).json({ success: 'Product was added successfully', productId: res.productId })
+    return res.status(201).json({ success: 'Product was added successfully', productId: result.productId })
   } catch (error) {
     console.error('addProduct error:', error)
     return res
@@ -331,7 +331,7 @@ module.exports = {
   addProduct,
   editProduct,
   deleteProduct,
-  restoreProduct,
+  // restoreProduct,
   uploadImages,
   deleteImage
 }
