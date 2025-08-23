@@ -7,6 +7,7 @@ const productRoute = require('./routes/productRoute')
 const cartRoute = require('./routes/cartRoute')
 const wishlistRoute = require('./routes/wishlistRoute')
 const orderRoute = require('./routes/orderRoute')
+const shipmentCostsRoute = require('./routes/shipmentCostsRoute')
 const cors = require('cors')
 const path = require('path')
 const fs = require('fs')
@@ -32,6 +33,7 @@ app.use('/api/product', productRoute)
 app.use('/api/cart', cartRoute)
 app.use('/api/wishlist', wishlistRoute)
 app.use('/api/order', orderRoute)
+app.use('/api/shipmentCost', shipmentCostsRoute)
 
 const port = process.env.PORT || 3000
 
