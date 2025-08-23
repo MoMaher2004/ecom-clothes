@@ -251,7 +251,7 @@ const editProduct = async (req, res) => {
 
 const deleteProduct = async (req, res) => {
   try {
-    const id = parseInt(req.body.id)
+    const id = parseInt(req.params.id)
     if (isNaN(id) || id <= 0) {
       return res.status(400).json({ error: 'Valid product ID is required' })
     }
@@ -302,7 +302,7 @@ const uploadImages = async (req, res) => {
       .json({ success: 'Images were uploaded successfully' })
   } catch (error) {
     console.error(error)
-    res.status(500).json({ message: 'Internal server error, Please try again' })
+    return res.status(500).json({ message: 'Internal server error, Please try again' })
   }
 }
 
@@ -311,14 +311,14 @@ const deleteImage = async (req, res) => {
     const fileName = req.params.imageName
     const result = await productModel.deleteImage(fileName)
     if (result.error) {
-      res.status(400).json({ error: result.error })
+      return res.status(400).json({ error: result.error })
     }
     const filePath = path.join(__dirname, '../../images', fileName)
     await fs.unlink(filePath)
     return res.status(200).json({ success: 'Images were deleted successfully' })
   } catch (error) {
     console.error(error)
-    res.status(500).json({ message: 'Internal server error, Please try again' })
+    return res.status(500).json({ message: 'Internal server error, Please try again' })
   }
 }
 

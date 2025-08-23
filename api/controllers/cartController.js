@@ -13,7 +13,7 @@ const addItem = async (req, res) => {
       return res.status(400).json({ error: 'Enter valid quantities' })
     }
     await cartModel.addItem(id, productId, smallQuantity, largeQuantity)
-    res.status(200).json({ success: 'Products were added successfully' })
+    return res.status(200).json({ success: 'Products were added successfully' })
   } catch (error) {
     console.error('Error during addItem:', error)
     throw new Error('Something went wrong')
@@ -28,7 +28,7 @@ const deleteItem = async (req, res) => {
       return res.status(400).json({ error: 'Enter a valid ID' })
     }
     await cartModel.deleteItem(id, productId)
-    res.status(200).json({ success: 'Products were deleted successfully' })
+    return res.status(200).json({ success: 'Products were deleted successfully' })
   } catch (error) {
     console.error('Error during deleteItem:', error)
     throw new Error('Something went wrong')
@@ -44,7 +44,7 @@ const viewCart = async (req, res) => {
       return res.status(404).json({ error: 'Page not found' })
     }
     const cart = await cartModel.viewCart(id, page, limit)
-    res
+    return res
       .status(200)
       .json({
         rows: cart.rows,

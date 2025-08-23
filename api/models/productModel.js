@@ -190,17 +190,29 @@ const editProduct = async (
 }
 
 const deleteProduct = async id => {
+  const transactionConn = await conn.getConnection()
   try {
-    const [res] = await conn.query(
+    await transactionConn.beginTransaction()
+    const [res] = await transactionConn.query(
       `UPDATE products SET isDeleted = 1 WHERE id = ? AND isDeleted = 0`,
       [id]
     )
     if (res.affectedRows === 0) {
       throw new Error('Something went wrong')
     }
+    await transactionConn.query(
+      `DELETE FROM carts WHERE productId = ?`,
+      [id]
+    )
+    await transactionConn.query(
+      `DELETE FROM wishlists WHERE productId = ?`,
+      [id]
+    )
+    await transactionConn.commit()
     return { success: 'Product deleted successfully' }
   } catch (error) {
     console.error('Error during deleteProduct:', error)
+    await transactionConn.rollback()
     throw new Error('Something went wrong')
   }
 }

@@ -9,10 +9,10 @@ const makeOrder = async (
   secondPhoneNumber = '',
   status = 'Pending',
   notes,
-  zipCode,
+  zipCode
 ) => {
+  const conn = await pool.getConnection()
   try {
-    const conn = await pool.getConnection()
     await conn.beginTransaction()
     const [cartProducts] = await conn.query(
       `SELECT c.*,
@@ -25,6 +25,10 @@ const makeOrder = async (
         WHERE c.userId = ?`,
       [id]
     )
+    if (cartProducts.length == 0){
+      await conn.rollback()
+      return { error: 'Cart is empty' }
+    }
     let lowAmounts = []
     for (let i = 0; i < cartProducts.length; i++) {
       if (cartProducts.smallQuantity > cartProducts.amountOfSmallSize) {
@@ -37,6 +41,7 @@ const makeOrder = async (
       }
     }
     if (lowAmounts.length > 0) {
+      await conn.rollback()
       return { error: 'low amount', data: lowAmounts }
     }
     const [order] = await conn.query(
@@ -110,6 +115,8 @@ const makeOrder = async (
     if (res.affectedRows === 0) {
       throw new Error('Something went wrong')
     }
+
+    await conn.query(`DELETE FROM carts WHERE userId = ?`, [id])
     await conn.commit()
     return { success: 'Order is added successfully' }
   } catch (error) {
@@ -243,8 +250,8 @@ WHERE id = ?`,
 }
 
 const cancelOrder = async orderId => {
+  const conn = await pool.getConnection()
   try {
-    const conn = await pool.getConnection()
     await conn.beginTransaction()
     const [res] = await conn.query(
       `UPDATE orders

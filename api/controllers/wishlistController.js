@@ -8,7 +8,7 @@ const addItem = async (req, res) => {
       return res.status(400).json({ error: 'Enter a valid ID' })
     }
     await wishlistModel.addItem(id, productId)
-    res.status(200).json({ success: 'Products were added successfully' })
+    return res.status(200).json({ success: 'Products were added successfully' })
   } catch (error) {
     console.error('Error during addItem:', error)
     throw new Error('Something went wrong')
@@ -23,7 +23,7 @@ const deleteItem = async (req, res) => {
       return res.status(400).json({ error: 'Enter a valid ID' })
     }
     await wishlistModel.deleteItem(id, productId)
-    res.status(200).json({ success: 'Products were deleted successfully' })
+    return res.status(200).json({ success: 'Products were deleted successfully' })
   } catch (error) {
     console.error('Error during deleteItem:', error)
     throw new Error('Something went wrong')
@@ -39,7 +39,7 @@ const viewWishlist = async (req, res) => {
       return res.status(404).json({ error: 'Page not found' })
     }
     const wishlist = await wishlistModel.viewWishlist(id, page, limit)
-    res.status(200).json({
+    return res.status(200).json({
       rows: wishlist.rows,
       totalPrice: wishlist.totalPrice,
       length: wishlist.length
@@ -63,7 +63,7 @@ const viewWishlistAsAdmin = async (req, res) => {
         return res.status(400).json({ error: 'Invalid ID' })
       }
       const wishlist = await wishlistModel.viewWishlist(id, page, limit)
-      res.status(200).json({
+      return res.status(200).json({
         rows: wishlist.rows,
         totalPrice: wishlist.totalPrice,
         length: wishlist.length
