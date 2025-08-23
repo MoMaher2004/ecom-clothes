@@ -50,9 +50,9 @@ const makeOrder = async (
       status,
       notes,
       zipCode,
-      deleveryCost)
+      shipmentCost)
       VALUES
-      (?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT cost FROM deleveryCosts WHERE government = ?))
+      (?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT cost FROM shipmentCosts WHERE government = ?))
       `,
       [
         id,
@@ -135,7 +135,7 @@ const viewOrderAsAdmin = async orderId => {
   o.updatedAt,
   o.notes,
   o.zipCode,
-  o.deleveryCost,
+  o.shipmentCost,
   u.id AS userId,
   u.firstName,
   u.lastName,
@@ -188,7 +188,7 @@ const viewOrder = async (orderId, userId) => {
   o.updatedAt,
   o.notes,
   o.zipCode,
-  o.deleveryCost,
+  o.shipmentCost,
   JSON_ARRAYAGG(
     JSON_OBJECT(
       'productName', p.name,
@@ -295,7 +295,7 @@ const viewOrdersListOfUserAsAdmin = async userId => {
   o.status,
   o.issuedAt,
   o.updatedAt,
-  o.deleveryCost,
+  o.shipmentCost,
   u.firstName,
   u.lastName,
   SUM(i.pricePerUnit * i.quantity) AS productsCost
@@ -313,7 +313,7 @@ GROUP BY
   o.status,
   o.issuedAt,
   o.updatedAt,
-  o.deleveryCost,
+  o.shipmentCost,
   u.firstName,
   u.lastName`,
       [userId]
@@ -341,7 +341,7 @@ const viewOrdersListAsAdmin = async () => {
   o.status,
   o.issuedAt,
   o.updatedAt,
-  o.deleveryCost,
+  o.shipmentCost,
   u.firstName,
   u.lastName,
   SUM(i.pricePerUnit * i.quantity) AS productsCost
@@ -358,7 +358,7 @@ GROUP BY
   o.status,
   o.issuedAt,
   o.updatedAt,
-  o.deleveryCost,
+  o.shipmentCost,
   u.firstName,
   u.lastName`,
       []
@@ -386,7 +386,7 @@ const viewOrdersList = async userId => {
   o.status,
   o.issuedAt,
   o.updatedAt,
-  o.deleveryCost,
+  o.shipmentCost,
   SUM(i.pricePerUnit * i.quantity) AS productsCost
 FROM orders o
 JOIN items i ON i.orderId = o.id
@@ -401,7 +401,7 @@ GROUP BY
   o.status,
   o.issuedAt,
   o.updatedAt,
-  o.deleveryCost`,
+  o.shipmentCost`,
       [userId]
     )
     if (rows.length == 0) {

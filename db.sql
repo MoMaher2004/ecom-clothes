@@ -399,14 +399,14 @@ ORDER BY RAND()
 LIMIT 30;
 
 
--- deleveryConsts
-DROP TABLE IF EXISTS deleveryCosts;
-CREATE TABLE deleveryCosts (
+-- shipmentCosts
+DROP TABLE IF EXISTS shipmentCosts;
+CREATE TABLE shipmentCosts (
   government VARCHAR(100) PRIMARY KEY,
   cost DECIMAL(6,2)    NOT NULL
 );
 
-INSERT INTO deleveryCosts (government, cost) VALUES
+INSERT INTO shipmentCosts (government, cost) VALUES
   ('Alexandria',      60.00),
   ('Aswan',           80.00),
   ('Assiut',          80.00),
@@ -453,7 +453,7 @@ CREATE TABLE orders (
   updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   notes TEXT DEFAULT NULL,
   zipCode VARCHAR(20),
-  deleveryCost DECIMAL(6,2) NOT NULL DEFAULT 0.00,
+  shipmentCost DECIMAL(6,2) NOT NULL DEFAULT 0.00,
   CONSTRAINT fk_orders_users FOREIGN KEY (userId) REFERENCES users(id) ON DELETE SET NULL
 );
 
