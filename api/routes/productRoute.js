@@ -2,9 +2,9 @@ const express = require('express')
 const { verifyToken, adminOnly } = require('../controllers/userController')
 const {
   getProductsList,
-  getDeletedProductsList,
+  // getDeletedProductsList,
   getProductById,
-  getProductByIdAsAdmin,
+  // getProductByIdAsAdmin,
   addProduct,
   editProduct,
   deleteProduct,
@@ -17,18 +17,18 @@ const imagesUtils = require('../utils/imagesUtils')
 const router = express.Router()
 
 router.get('/getProductsList', getProductsList)
-router.get(
-  '/getDeletedProductsList',
-  verifyToken,
-  adminOnly,
-  getDeletedProductsList
-)
+// router.get(
+//   '/getDeletedProductsList',
+//   verifyToken,
+//   adminOnly,
+//   getDeletedProductsList
+// )
 router.get('/getProductById/:id', getProductById)
 router.get(
   '/getProductByIdAsAdmin/:id',
   verifyToken,
   adminOnly,
-  getProductByIdAsAdmin
+  getProductById
 )
 router.post('/addProduct/', verifyToken, adminOnly, addProduct)
 router.patch('/editProduct/:id', verifyToken, adminOnly, editProduct)

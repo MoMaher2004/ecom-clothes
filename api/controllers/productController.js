@@ -36,7 +36,6 @@ const getProductsList = async (req, res) => {
     const products = await productModel.getProductsList(
       page,
       limit,
-      false,
       orderBy,
       withNursery,
       userId
@@ -55,27 +54,27 @@ const getProductsList = async (req, res) => {
   }
 }
 
-const getDeletedProductsList = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1
-    const limit = parseInt(req.query.limit) || 10
-    if (isNaN(page) || page < 1 || isNaN(limit) || limit < 1) {
-      return res.status(400).json({ error: 'Invalid pagination parameters' })
-    }
-    const products = await productModel.getProductsList(page, limit, true)
+// const getDeletedProductsList = async (req, res) => {
+//   try {
+//     const page = parseInt(req.query.page) || 1
+//     const limit = parseInt(req.query.limit) || 10
+//     if (isNaN(page) || page < 1 || isNaN(limit) || limit < 1) {
+//       return res.status(400).json({ error: 'Invalid pagination parameters' })
+//     }
+//     const products = await productModel.getProductsList(page, limit, true)
 
-    if (products.length === 0) {
-      return res.status(200).json({ success: [] })
-    }
+//     if (products.length === 0) {
+//       return res.status(200).json({ success: [] })
+//     }
 
-    return res.status(200).json({ data: products['rows'], length: products['count'] })
-  } catch (error) {
-    console.error('getDeletedProductsList error:', error)
-    return res
-      .status(500)
-      .json({ error: 'Internal server error, Please try again' })
-  }
-}
+//     return res.status(200).json({ data: products['rows'], length: products['count'] })
+//   } catch (error) {
+//     console.error('getDeletedProductsList error:', error)
+//     return res
+//       .status(500)
+//       .json({ error: 'Internal server error, Please try again' })
+//   }
+// }
 
 const getProductById = async (req, res) => {
   try {
@@ -111,27 +110,27 @@ const getProductById = async (req, res) => {
   }
 }
 
-const getProductByIdAsAdmin = async (req, res) => {
-  try {
-    const id = parseInt(req.params.id)
-    const allowDeleted = req.user.isAdmin
-    if (isNaN(id) || id < 1) {
-      return res.status(404).json({ error: 'Product not found' })
-    }
-    const product = await productModel.getProductById(id, allowDeleted)
+// const getProductByIdAsAdmin = async (req, res) => {
+//   try {
+//     const id = parseInt(req.params.id)
+//     const allowDeleted = req.user.isAdmin
+//     if (isNaN(id) || id < 1) {
+//       return res.status(404).json({ error: 'Product not found' })
+//     }
+//     const product = await productModel.getProductById(id)
 
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found' })
-    }
+//     if (!product) {
+//       return res.status(404).json({ error: 'Product not found' })
+//     }
 
-    return res.status(200).json(product)
-  } catch (error) {
-    console.error('getProductById error:', error)
-    return res
-      .status(500)
-      .json({ error: 'Internal server error, Please try again' })
-  }
-}
+//     return res.status(200).json(product)
+//   } catch (error) {
+//     console.error('getProductById error:', error)
+//     return res
+//       .status(500)
+//       .json({ error: 'Internal server error, Please try again' })
+//   }
+// }
 
 const addProduct = async (req, res) => {
   try {
@@ -325,9 +324,9 @@ const deleteImage = async (req, res) => {
 
 module.exports = {
   getProductsList,
-  getDeletedProductsList,
+  // getDeletedProductsList,
   getProductById,
-  getProductByIdAsAdmin,
+  // getProductByIdAsAdmin,
   addProduct,
   editProduct,
   deleteProduct,

@@ -1,7 +1,8 @@
 const conn = require('../config/db')
 
-const getProductById = async (id, allowDeleted = false, userId = 0) => {
+const getProductById = async (id, userId) => {
   try {
+    const allowDeleted = false
     const [rows] = await conn.query(
       `SELECT 
     p.id, 
@@ -48,12 +49,13 @@ GROUP BY
 const getProductsList = async (
   page = 1,
   limit = 20,
-  isDeleted = false,
+  // isDeleted = false,
   orderBy = false,
   nursery = null,
   id = 0
 ) => {
   try {
+    const isDeleted = false
     const offset = (page - 1) * limit
     let filter
     if (orderBy == 'newAdded') {
@@ -174,7 +176,7 @@ const editProduct = async (
         description = ?,
         amountOfSmallSize = ?,
         amountOfLargeSize = ?
-        WHERE id = ?`,
+        WHERE id = ? AND isDeleted = 0`,
       [price, discount, description, amountOfSmallSize, amountOfLargeSize, id]
     )
     if (res.affectedRows === 0) {
@@ -190,7 +192,7 @@ const editProduct = async (
 const deleteProduct = async id => {
   try {
     const [res] = await conn.query(
-      `UPDATE products SET isDeleted = 1 WHERE id = ?`,
+      `UPDATE products SET isDeleted = 1 WHERE id = ? AND isDeleted = 0`,
       [id]
     )
     if (res.affectedRows === 0) {
