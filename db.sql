@@ -457,16 +457,16 @@ CREATE TABLE orders (
   CONSTRAINT fk_orders_users FOREIGN KEY (userId) REFERENCES users(id) ON DELETE SET NULL
 );
 
-INSERT INTO orders (id, userId, trackCode, government, city, address, phoneNumber, secondPhoneNumber, status, notes, zipCode, deleveryCost)
+INSERT INTO orders (id, userId, trackCode, government, city, address, phoneNumber, secondPhoneNumber, status, notes, zipCode, shipmentCost)
 VALUES
-  (1,  1, 'TRK-0001', 'Cairo',      'Nasr City',  '12 Abbas El Akkad St.',                       '01001234567', '01122334455', 'Pending',    'Leave with doorman', '11765', (SELECT cost FROM deleveryCosts WHERE government = 'Cairo' LIMIT 1)),
-  (2,  2, 'TRK-0002', 'Giza',       'Dokki',      '45 Tahrir St.',                               '01007654321', NULL,           'Processing', NULL,                 '12611', (SELECT cost FROM deleveryCosts WHERE government = 'Giza' LIMIT 1)),
-  (3,  3, 'TRK-0003', 'Alexandria', 'Smouha',     '23 El Horreya Rd.',                           '01234567890', '01555555555', 'Shipped',    'Call before delivery', '21532', (SELECT cost FROM deleveryCosts WHERE government = 'Alexandria' LIMIT 1)),
-  (4,  4, 'TRK-0004', 'Dakahlia',   'Mansoura',   'El Gomhoria St., near Faculty of Medicine',  '01099887766', NULL,           'Delivered',  NULL,                 '35511', (SELECT cost FROM deleveryCosts WHERE government = 'Dakahlia' LIMIT 1)),
-  (5,  9, 'TRK-0005', 'Sharqia',    'Zagazig',    'Mostafa Kamel St., 3rd floor',                '01033445566', '01211223344', 'Cancelled',  'Customer requested hold', '44555', (SELECT cost FROM deleveryCosts WHERE government = 'Sharqia' LIMIT 1)),
-  (6, 10, 'TRK-0006', 'Qalyubia',   'Shubra',     '5 El-Mansour St.',                            '01055556666', NULL,           'Pending',    NULL,                 '13311', (SELECT cost FROM deleveryCosts WHERE government = 'Qalyubia' LIMIT 1)),
-  (7,  1, 'TRK-0007', 'Beheira',    'Damanhour',  'Street 10, Building 4',                       '01144443332', NULL,           'Processing', 'Deliver after 6pm',  '22512', (SELECT cost FROM deleveryCosts WHERE government = 'Beheira' LIMIT 1)),
-  (8,  2, 'TRK-0008', 'Minya',      'Minya',      'Al-Mahatta St., apt 2',                       '01077778888', NULL,           'Shipped',    NULL,                 '61513', (SELECT cost FROM deleveryCosts WHERE government = 'Minya' LIMIT 1));
+  (1,  1, 'TRK-0001', 'Cairo',      'Nasr City',  '12 Abbas El Akkad St.',                       '01001234567', '01122334455', 'Pending',    'Leave with doorman', '11765', (SELECT cost FROM shipmentCosts WHERE government = 'Cairo' LIMIT 1)),
+  (2,  2, 'TRK-0002', 'Giza',       'Dokki',      '45 Tahrir St.',                               '01007654321', NULL,           'Processing', NULL,                 '12611', (SELECT cost FROM shipmentCosts WHERE government = 'Giza' LIMIT 1)),
+  (3,  3, 'TRK-0003', 'Alexandria', 'Smouha',     '23 El Horreya Rd.',                           '01234567890', '01555555555', 'Shipped',    'Call before delivery', '21532', (SELECT cost FROM shipmentCosts WHERE government = 'Alexandria' LIMIT 1)),
+  (4,  4, 'TRK-0004', 'Dakahlia',   'Mansoura',   'El Gomhoria St., near Faculty of Medicine',  '01099887766', NULL,           'Delivered',  NULL,                 '35511', (SELECT cost FROM shipmentCosts WHERE government = 'Dakahlia' LIMIT 1)),
+  (5,  9, 'TRK-0005', 'Sharqia',    'Zagazig',    'Mostafa Kamel St., 3rd floor',                '01033445566', '01211223344', 'Cancelled',  'Customer requested hold', '44555', (SELECT cost FROM shipmentCosts WHERE government = 'Sharqia' LIMIT 1)),
+  (6, 10, 'TRK-0006', 'Qalyubia',   'Shubra',     '5 El-Mansour St.',                            '01055556666', NULL,           'Pending',    NULL,                 '13311', (SELECT cost FROM shipmentCosts WHERE government = 'Qalyubia' LIMIT 1)),
+  (7,  1, 'TRK-0007', 'Beheira',    'Damanhour',  'Street 10, Building 4',                       '01144443332', NULL,           'Processing', 'Deliver after 6pm',  '22512', (SELECT cost FROM shipmentCosts WHERE government = 'Beheira' LIMIT 1)),
+  (8,  2, 'TRK-0008', 'Minya',      'Minya',      'Al-Mahatta St., apt 2',                       '01077778888', NULL,           'Shipped',    NULL,                 '61513', (SELECT cost FROM shipmentCosts WHERE government = 'Minya' LIMIT 1));
 
 
 -- items
