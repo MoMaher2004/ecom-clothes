@@ -5,7 +5,7 @@ const viewShipmentCosts = async (req, res) => {
     const rows = await shipmentCostsModel.viewShipmentCosts()
     return res.status(200).json({ data: rows })
   } catch (error) {
-    console.error('Error during addItem:', error)
+    console.error('Error during viewShipmentCosts:', error)
     throw new Error('Something went wrong')
   }
 }
@@ -19,7 +19,7 @@ const modifyShipmentCost = async (req, res) => {
     await shipmentCostsModel.modifyShipmentCost(government, newCost)
     return res.status(200).json({ success: 'Cost is modified successfully' })
   } catch (error) {
-    console.error('Error during addItem:', error)
+    console.error('Error during modifyShipmentCost:', error)
     throw new Error('Something went wrong')
   }
 }

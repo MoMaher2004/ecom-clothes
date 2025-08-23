@@ -6,9 +6,6 @@ const viewShipmentCosts = async () => {
       `SELECT * FROM shipmentCosts`,
       []
     )
-    if (rows.affectedRows === 0) {
-      throw new Error('Something went wrong')
-    }
     return { data: rows }
   } catch (error) {
     console.error('Error during viewShipmentCosts:', error)
@@ -27,7 +24,7 @@ const modifyShipmentCost = async (government, newCost) => {
     }
     return { success: 'Cost is updated successfully' }
   } catch (error) {
-    console.error('Error during viewShipmentCosts:', error)
+    console.error('Error during modifyShipmentCost:', error)
     throw new Error('Something went wrong')
   }
 }
