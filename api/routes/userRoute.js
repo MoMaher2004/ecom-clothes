@@ -12,7 +12,6 @@ const {
     confirmUserEmail,
     logout,
     deleteAccount,
-    restoreUser,
     accountInfo,
     getUserById,
     getUserByEmail,
@@ -55,7 +54,7 @@ router.get(
   (req, res, next) => adminOnly(req, res, next),
   getUsersList
 )
-router.get('/confirm-email', verifyToken, confirmUserEmail)
+router.get('/confirm-email', confirmUserEmail)
 
 router.get('/logout', verifyToken, logout)
 

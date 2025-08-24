@@ -293,7 +293,7 @@ const confirmUserEmail = async (id, token) => {
       return { error: 'Failed to confirm email' }
     }
 
-    return { success: 'Email is confirmed successfully' }
+    return { success: 'Email is confirmed successfully', id: rows[0].id, email: rows[0].email }
   } catch (error) {
     console.error('Error during confirming Email:', error)
     throw new Error('Something went wrong')

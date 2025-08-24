@@ -152,7 +152,6 @@ const login = async (req, res, fromFunction = false) => {
     result.token = createToken(result.id, result.email, 'password')
     saveCookies(res, result.token)
     if (fromFunction) {
-      console.log(fromFunction)
       return true
     }
     let redirect
@@ -364,6 +363,8 @@ const confirmUserEmail = async (req, res) => {
     if (result.error) {
       return res.status(400).json({ error: 'Invalid URL' })
     }
+    result.token = createToken(result.id, result.email, 'emailConfirmation')
+    saveCookies(res, result.token)
     return res
       .status(200)
       .json({ success: 'Login is successful', redirect: 'homePage' })
@@ -405,6 +406,9 @@ const addUser = async (req, res) => {
     if (addUserRes.error) {
       return res.status(400).json({ error: addUserRes.error })
     }
+
+    await login(req, res, true)
+
     const result = await updateEmailConfirmationToken(email)
     const from = 'support'
     const subject = 'Confirm Email'
