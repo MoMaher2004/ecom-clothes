@@ -107,7 +107,7 @@ const viewOrder = async (req, res) => {
 
 const updateOrderStatus = async (req, res) => {
   try {
-    const id = parseInt(req.body.productId)
+    const id = parseInt(req.body.orderId)
     if (isNaN(id) || id < 1) {
       return res.status(400).json({ error: 'Enter valid ID' })
     }
@@ -144,10 +144,12 @@ const cancelOrder = async (req, res) => {
 const viewOrdersListOfUserAsAdmin = async (req, res) => {
   try {
     const id = parseInt(req.params.id)
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 10
     if (isNaN(id) || id < 1) {
       return res.status(400).json({ error: 'Enter valid ID' })
     }
-    const result = await orderModel.viewOrdersListOfUserAsAdmin(id)
+    const result = await orderModel.viewOrdersListOfUserAsAdmin(id, page, limit)
     if (result.error) {
       return res.status(400).json({ error: result.error })
     }
@@ -162,7 +164,9 @@ const viewOrdersListOfUserAsAdmin = async (req, res) => {
 
 const viewOrdersListAsAdmin = async (req, res) => {
   try {
-    const result = await orderModel.viewOrdersListAsAdmin()
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 10
+    const result = await orderModel.viewOrdersListAsAdmin(page, limit)
     if (result.error) {
       return res.status(400).json({ error: result.error })
     }
@@ -178,7 +182,9 @@ const viewOrdersListAsAdmin = async (req, res) => {
 const viewOrdersList = async (req, res) => {
   try {
     const id = req.user.id
-    const result = await orderModel.viewOrdersList(id)
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 10
+    const result = await orderModel.viewOrdersList(id, page, limit)
     return res.status(200).json(result)
   } catch (error) {
     console.error('viewOrdersList error:', error)

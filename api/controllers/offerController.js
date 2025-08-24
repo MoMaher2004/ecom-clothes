@@ -6,8 +6,9 @@ const viewOffers = async (req, res) => {
     return res.status(200).json(data)
   } catch (error) {
     console.error('Error during viewOffers:', error)
-    throw new Error('Something went wrong')
-  }
+return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })  }
 }
 
 const addOffer = async (req, res) => {
@@ -20,8 +21,9 @@ const addOffer = async (req, res) => {
     return res.status(200).json({ success: 'Offer is added successfully' })
   } catch (error) {
     console.error('Error during addOffer:', error)
-    throw new Error('Something went wrong')
-  }
+return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })  }
 }
 
 const deleteOffer = async (req, res) => {
@@ -34,8 +36,9 @@ const deleteOffer = async (req, res) => {
     return res.status(200).json({ success: 'Cost is modified successfully' })
   } catch (error) {
     console.error('Error during deleteOffer:', error)
-    throw new Error('Something went wrong')
-  }
+return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })  }
 }
 
 module.exports = {

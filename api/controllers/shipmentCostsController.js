@@ -2,12 +2,13 @@ const shipmentCostsModel = require('../models/shipmentCostsModel')
 
 const viewShipmentCosts = async (req, res) => {
   try {
-    const rows = await shipmentCostsModel.viewShipmentCosts()
-    return res.status(200).json({ data: rows })
+    const data = await shipmentCostsModel.viewShipmentCosts()
+    return res.status(200).json(data)
   } catch (error) {
     console.error('Error during viewShipmentCosts:', error)
-    throw new Error('Something went wrong')
-  }
+return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })  }
 }
 
 const modifyShipmentCost = async (req, res) => {
@@ -20,8 +21,9 @@ const modifyShipmentCost = async (req, res) => {
     return res.status(200).json({ success: 'Cost is modified successfully' })
   } catch (error) {
     console.error('Error during modifyShipmentCost:', error)
-    throw new Error('Something went wrong')
-  }
+return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })  }
 }
 
 module.exports = {

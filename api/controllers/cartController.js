@@ -16,8 +16,9 @@ const addItem = async (req, res) => {
     return res.status(200).json({ success: 'Products were added successfully' })
   } catch (error) {
     console.error('Error during addItem:', error)
-    throw new Error('Something went wrong')
-  }
+return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })  }
 }
 
 const deleteItem = async (req, res) => {
@@ -31,8 +32,9 @@ const deleteItem = async (req, res) => {
     return res.status(200).json({ success: 'Products were deleted successfully' })
   } catch (error) {
     console.error('Error during deleteItem:', error)
-    throw new Error('Something went wrong')
-  }
+return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })  }
 }
 
 const viewCart = async (req, res) => {
@@ -53,8 +55,9 @@ const viewCart = async (req, res) => {
       })
   } catch (error) {
     console.error('Error during viewCart:', error)
-    throw new Error('Something went wrong')
-  }
+return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })  }
 }
 
 module.exports = {

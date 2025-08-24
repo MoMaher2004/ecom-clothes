@@ -25,7 +25,7 @@ const makeOrder = async (
         WHERE c.userId = ?`,
       [id]
     )
-    if (cartProducts.length == 0){
+    if (cartProducts.length == 0) {
       await conn.rollback()
       return { error: 'Cart is empty' }
     }
@@ -289,8 +289,10 @@ WHERE id = ?`,
   }
 }
 
-const viewOrdersListOfUserAsAdmin = async userId => {
+const viewOrdersListOfUserAsAdmin = async (userId, page = 1, limit = 20) => {
   try {
+    const offset = (page - 1) * limit
+    
     const [rows] = await pool.query(
       `SELECT 
   o.id AS orderId,
@@ -322,21 +324,24 @@ GROUP BY
   o.updatedAt,
   o.shipmentCost,
   u.firstName,
-  u.lastName`,
-      [userId]
+  u.lastName
+  LIMIT ? OFFSET ?`,
+      [userId, limit, offset]
     )
     if (rows.length == 0) {
-      return []
+      return { data: [], length: 0 }
     }
-    return { data: rows }
+    const [length] = await pool.query(`SELECT COUNT(*) AS count FROM orders WHERE userId = ?` ,[userId])
+    return { data: rows, length: length[0].count }
   } catch (error) {
     console.error('Error during viewOrdersListAsAdminOfUser:', error)
     throw new Error('Something went wrong')
   }
 }
 
-const viewOrdersListAsAdmin = async () => {
+const viewOrdersListAsAdmin = async (page = 1, limit = 20) => {
   try {
+    const offset = (page - 1) * limit
     const [rows] = await pool.query(
       `SELECT 
   o.id AS orderId,
@@ -367,21 +372,24 @@ GROUP BY
   o.updatedAt,
   o.shipmentCost,
   u.firstName,
-  u.lastName`,
-      []
+  u.lastName
+  LIMIT ? OFFSET ?`,
+      [limit, offset]
     )
     if (rows.length == 0) {
-      return []
+      return { data: [], length: 0 }
     }
-    return { data: rows }
+    const [length] = await pool.query(`SELECT COUNT(*) AS count FROM orders` ,[])
+    return { data: rows, length: length[0].count }
   } catch (error) {
     console.error('Error during viewOrdersListAsAdmin:', error)
     throw new Error('Something went wrong')
   }
 }
 
-const viewOrdersList = async userId => {
+const viewOrdersList = async (userId, page = 1, limit = 20) => {
   try {
+    const offset = (page - 1) * limit
     const [rows] = await pool.query(
       `SELECT 
   o.id AS orderId,
@@ -408,13 +416,15 @@ GROUP BY
   o.status,
   o.issuedAt,
   o.updatedAt,
-  o.shipmentCost`,
-      [userId]
+  o.shipmentCost
+  LIMIT ? OFFSET ?`,
+      [userId, limit, offset]
     )
     if (rows.length == 0) {
-      return []
+      return { data: [], length: 0 }
     }
-    return { data: rows }
+    const [length] = await pool.query(`SELECT COUNT(*) AS count FROM orders WHERE userId = ?` ,[userId])
+    return { data: rows, length: length[0].count }
   } catch (error) {
     console.error('Error during viewOrdersList:', error)
     throw new Error('Something went wrong')

@@ -3,7 +3,7 @@ const conn = require('../config/db')
 const viewOffers = async () => {
   try {
     const [rows] = await conn.query(
-      `SELECT * FROM offers`,
+      `SELECT * FROM offers ORDER BY id DESC`,
       []
     )
     return { data: rows }
