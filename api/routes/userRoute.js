@@ -44,7 +44,6 @@ router.delete(
 )
 router.patch(
   '/resendEmailConfirmationToken',
-  verifyToken,
   resendEmailConfirmationToken
 )
 router.post('/add', addUser)
