@@ -1,5 +1,131 @@
 const pool = require('../config/db')
 
+// const makeOrder = async (
+//   id,
+//   government,
+//   city,
+//   address,
+//   phoneNumber,
+//   secondPhoneNumber = '',
+//   status = 'Pending',
+//   notes,
+//   zipCode
+// ) => {
+//   const conn = await pool.getConnection()
+//   try {
+//     await conn.beginTransaction()
+//     const [cartProducts] = await conn.query(
+//       `SELECT c.*,
+//         (p.price * (1 - p.discount)) AS price,
+//         p.name,
+//         p.amountOfSmallSize AS amountOfSmallSize,
+//         p.amountOfLargeSize AS amountOfLargeSize
+//         FROM carts c
+//         JOIN products p on c.productId = p.id
+//         WHERE c.userId = ?`,
+//       [id]
+//     )
+//     if (cartProducts.length == 0) {
+//       await conn.rollback()
+//       return { error: 'Cart is empty' }
+//     }
+//     let lowAmounts = []
+//     for (let i = 0; i < cartProducts.length; i++) {
+//       if (cartProducts.smallQuantity > cartProducts.amountOfSmallSize) {
+//         lowAmounts.push({
+//           id: cartProducts.productId,
+//           name: cartProducts.name,
+//           userAmount: cartProducts.smallQuantity,
+//           availableAmount: cartProducts.amountOfSmallSize
+//         })
+//       }
+//     }
+//     if (lowAmounts.length > 0) {
+//       await conn.rollback()
+//       return { error: 'low amount', data: lowAmounts }
+//     }
+//     const [order] = await conn.query(
+//       `INSERT INTO orders
+//       (userId,
+//       government,
+//       city,
+//       address,
+//       phoneNumber,
+//       secondPhoneNumber,
+//       status,
+//       notes,
+//       zipCode,
+//       shipmentCost)
+//       VALUES
+//       (?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT cost FROM shipmentCosts WHERE government = ?))
+//       `,
+//       [
+//         id,
+//         government,
+//         city,
+//         address,
+//         phoneNumber,
+//         secondPhoneNumber,
+//         status,
+//         notes,
+//         zipCode,
+//         government
+//       ]
+//     )
+//     if (order.affectedRows === 0) {
+//       throw new Error('Something went wrong')
+//     }
+//     const orderId = order.insertId
+//     let items = []
+//     for (let i = 0; i < cartProducts.length; i++) {
+//       await conn.query(
+//         `UPDATE products
+//             SET amountOfSmallSize = amountOfSmallSize - ?,
+//             amountOfLargeSize = amountOfLargeSize - ?
+//             WHERE id = ?`,
+//         [
+//           cartProducts[i].smallQuantity,
+//           cartProducts[i].largeQuantity,
+//           cartProducts[i].productId
+//         ]
+//       )
+//       if (cartProducts[i].smallQuantity > 0) {
+//         items.push([
+//           orderId,
+//           cartProducts[i].productId,
+//           cartProducts[i].smallQuantity,
+//           cartProducts[i].price,
+//           'small'
+//         ])
+//       }
+//       if (cartProducts[i].largeQuantity > 0) {
+//         items.push([
+//           orderId,
+//           cartProducts[i].productId,
+//           cartProducts[i].largeQuantity,
+//           cartProducts[i].price,
+//           'large'
+//         ])
+//       }
+//     }
+//     const [res] = await conn.query(
+//       `INSERT INTO items (orderId, productId, quantity, pricePerUnit, size) VALUES ?`,
+//       [items]
+//     )
+//     if (res.affectedRows === 0) {
+//       throw new Error('Something went wrong')
+//     }
+
+//     await conn.query(`DELETE FROM carts WHERE userId = ?`, [id])
+//     await conn.commit()
+//     return { success: 'Order is added successfully' }
+//   } catch (error) {
+//     console.error('Error during makeOrder:', error)
+//     await conn.rollback()
+//     throw new Error('Something went wrong')
+//   }
+// }
+
 const makeOrder = async (
   id,
   government,
@@ -11,40 +137,8 @@ const makeOrder = async (
   notes,
   zipCode
 ) => {
-  const conn = await pool.getConnection()
   try {
-    await conn.beginTransaction()
-    const [cartProducts] = await conn.query(
-      `SELECT c.*,
-        (p.price * (1 - p.discount)) AS price,
-        p.name,
-        p.amountOfSmallSize AS amountOfSmallSize,
-        p.amountOfLargeSize AS amountOfLargeSize
-        FROM carts c
-        JOIN products p on c.productId = p.id
-        WHERE c.userId = ?`,
-      [id]
-    )
-    if (cartProducts.length == 0) {
-      await conn.rollback()
-      return { error: 'Cart is empty' }
-    }
-    let lowAmounts = []
-    for (let i = 0; i < cartProducts.length; i++) {
-      if (cartProducts.smallQuantity > cartProducts.amountOfSmallSize) {
-        lowAmounts.push({
-          id: cartProducts.productId,
-          name: cartProducts.name,
-          userAmount: cartProducts.smallQuantity,
-          availableAmount: cartProducts.amountOfSmallSize
-        })
-      }
-    }
-    if (lowAmounts.length > 0) {
-      await conn.rollback()
-      return { error: 'low amount', data: lowAmounts }
-    }
-    const [order] = await conn.query(
+    const [order] = await pool.query(
       `INSERT INTO orders 
       (userId,
       government,
@@ -76,52 +170,36 @@ const makeOrder = async (
       throw new Error('Something went wrong')
     }
     const orderId = order.insertId
-    let items = []
-    for (let i = 0; i < cartProducts.length; i++) {
-      await conn.query(
-        `UPDATE products 
-            SET amountOfSmallSize = amountOfSmallSize - ?,
-            amountOfLargeSize = amountOfLargeSize - ?
-            WHERE id = ?`,
-        [
-          cartProducts[i].smallQuantity,
-          cartProducts[i].largeQuantity,
-          cartProducts[i].productId
-        ]
-      )
-      if (cartProducts[i].smallQuantity > 0) {
-        items.push([
-          orderId,
-          cartProducts[i].productId,
-          cartProducts[i].smallQuantity,
-          cartProducts[i].price,
-          'small'
-        ])
-      }
-      if (cartProducts[i].largeQuantity > 0) {
-        items.push([
-          orderId,
-          cartProducts[i].productId,
-          cartProducts[i].largeQuantity,
-          cartProducts[i].price,
-          'large'
-        ])
-      }
+
+    const [shipmentCost] = await pool.query(
+      `SELECT cost FROM shipmentCosts WHERE government = ?`,
+      [government]
+    )
+    return {
+      success: 'Order is added successfully',
+      insertId: orderId,
+      shipmentCost: shipmentCost[0].cost
     }
-    const [res] = await conn.query(
-      `INSERT INTO items (orderId, productId, quantity, pricePerUnit, size) VALUES ?`,
-      [items]
+  } catch (error) {
+    console.error('Error during makeOrder:', error)
+    throw new Error('Something went wrong')
+  }
+}
+
+const setPaymobOrderId = async (orderId, paymobOrderId) => {
+  try {
+    const [res] = await pool.query(
+      `UPDATE orders SET paymobOrderId = ? WHERE id = ?`,
+      [paymobOrderId, orderId]
     )
     if (res.affectedRows === 0) {
       throw new Error('Something went wrong')
     }
-
-    await conn.query(`DELETE FROM carts WHERE userId = ?`, [id])
-    await conn.commit()
-    return { success: 'Order is added successfully' }
+    return {
+      success: 'Order paymob ID is added successfully'
+    }
   } catch (error) {
     console.error('Error during makeOrder:', error)
-    await conn.rollback()
     throw new Error('Something went wrong')
   }
 }
@@ -169,12 +247,124 @@ GROUP BY o.id, u.id, u.firstName, u.lastName, u.email, o.issuedAt, o.status;`,
       return []
     }
     const [productsCost] = await pool.query(
-      `SELECT SUM(pricePerUnit) FROM items WHERE orderId = ?`,
+      `SELECT SUM(pricePerUnit * quantity) AS totalCost FROM items WHERE orderId = ?`,
       orderId
     )
-    return { data: rows[0], productsCost: productsCost[0] }
+    return { data: rows[0], productsCost: productsCost[0].totalCost }
   } catch (error) {
     console.error('Error during viewOrderAsAdmin:', error)
+    throw new Error('Something went wrong')
+  }
+}
+
+const confirmOrder = async (orderId) => {
+  const conn = await pool.getConnection()
+  try {
+    await conn.beginTransaction()
+
+    const [orderRows] = await conn.query(`SELECT userId FROM orders WHERE id = ? FOR UPDATE`, [
+      orderId
+    ])
+    if (!orderRows || orderRows.length === 0) {
+      await conn.rollback()
+      throw new Error('Order not found')
+    }
+    const userId = orderRows[0].userId
+
+    const [cartProducts] = await conn.query(
+      `SELECT c.*,
+         (p.price * (1 - p.discount)) AS price,
+         p.name,
+         p.amountOfSmallSize AS amountOfSmallSize,
+         p.amountOfLargeSize AS amountOfLargeSize
+       FROM carts c
+       JOIN products p on c.productId = p.id
+       WHERE c.userId = ?`,
+      [userId]
+    )
+
+    if (!cartProducts || cartProducts.length === 0) {
+      await conn.rollback()
+      throw new Error('Cart is empty')
+    }
+
+    let lowAmounts = []
+    for (let i = 0; i < cartProducts.length; i++) {
+      const cp = cartProducts[i]
+      if ((cp.smallQuantity || 0) > cp.amountOfSmallSize) {
+        lowAmounts.push({
+          id: cp.productId,
+          name: cp.name,
+          userAmount: cp.smallQuantity,
+          availableAmount: cp.amountOfSmallSize
+        })
+      }
+      if ((cp.largeQuantity || 0) > cp.amountOfLargeSize) {
+        lowAmounts.push({
+          id: cp.productId,
+          name: cp.name,
+          userAmount: cp.largeQuantity,
+          availableAmount: cp.amountOfLargeSize
+        })
+      }
+    }
+    if (lowAmounts.length > 0) {
+      await conn.rollback()
+      return { error: 'low amount', data: lowAmounts }
+    }
+
+    let items = []
+    for (let i = 0; i < cartProducts.length; i++) {
+      const cp = cartProducts[i]
+      await conn.query(
+        `UPDATE products 
+         SET amountOfSmallSize = amountOfSmallSize - ?,
+             amountOfLargeSize = amountOfLargeSize - ?
+         WHERE id = ?`,
+        [cp.smallQuantity || 0, cp.largeQuantity || 0, cp.productId]
+      )
+      if ((cp.smallQuantity || 0) > 0) {
+        items.push([orderId, cp.productId, cp.smallQuantity, cp.price, 'small'])
+      }
+      if ((cp.largeQuantity || 0) > 0) {
+        items.push([orderId, cp.productId, cp.largeQuantity, cp.price, 'large'])
+      }
+    }
+
+    const [insRes] = await conn.query(
+      `INSERT INTO items (orderId, productId, quantity, pricePerUnit, size) VALUES ?`,
+      [items]
+    )
+    if (insRes.affectedRows === 0) {
+      await conn.rollback()
+      throw new Error('Something went wrong inserting items')
+    }
+
+    await conn.query(`DELETE FROM carts WHERE userId = ?`, [userId])
+
+    await conn.query(`UPDATE orders SET status = 'Processing', updatedAt = NOW() WHERE id = ?`, [
+      orderId
+    ])
+
+    await conn.commit()
+    return { success: 'Order confirmed and processed' }
+  } catch (error) {
+    console.error('Error during confirmOrder:', error)
+    await conn.rollback()
+    throw new Error('Something went wrong')
+  } finally {
+    conn && conn.release()
+  }
+}
+
+const updateOrderStatusToFailed = async (orderId) => {
+  try {
+    const [res] = await pool.query(`UPDATE orders SET status = 'Failed' WHERE id = ?`, [
+      orderId
+    ])
+    return res
+  } catch (err) {
+    console.error('updateOrderStatusToFailed error:', err)
     throw new Error('Something went wrong')
   }
 }
@@ -222,6 +412,22 @@ GROUP BY o.id, o.issuedAt, o.status;`,
     return { data: rows[0], productsCost: productsCost[0].productsCost }
   } catch (error) {
     console.error('Error during viewOrder:', error)
+    throw new Error('Something went wrong')
+  }
+}
+
+const getOrderByPaymobId = async (paymobId) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT id FROM orders WHERE paymobId = ?`,
+      [paymobId]
+    )
+    if (rows.length == 0) {
+      return []
+    }
+    return { id: rows[0] }
+  } catch (error) {
+    console.error('Error during getOrderByPaymobId:', error)
     throw new Error('Something went wrong')
   }
 }
@@ -292,7 +498,7 @@ WHERE id = ?`,
 const viewOrdersListOfUserAsAdmin = async (userId, page = 1, limit = 20) => {
   try {
     const offset = (page - 1) * limit
-    
+
     const [rows] = await pool.query(
       `SELECT 
   o.id AS orderId,
@@ -331,7 +537,10 @@ GROUP BY
     if (rows.length == 0) {
       return { data: [], length: 0 }
     }
-    const [length] = await pool.query(`SELECT COUNT(*) AS count FROM orders WHERE userId = ?` ,[userId])
+    const [length] = await pool.query(
+      `SELECT COUNT(*) AS count FROM orders WHERE userId = ?`,
+      [userId]
+    )
     return { data: rows, length: length[0].count }
   } catch (error) {
     console.error('Error during viewOrdersListAsAdminOfUser:', error)
@@ -379,7 +588,10 @@ GROUP BY
     if (rows.length == 0) {
       return { data: [], length: 0 }
     }
-    const [length] = await pool.query(`SELECT COUNT(*) AS count FROM orders` ,[])
+    const [length] = await pool.query(
+      `SELECT COUNT(*) AS count FROM orders`,
+      []
+    )
     return { data: rows, length: length[0].count }
   } catch (error) {
     console.error('Error during viewOrdersListAsAdmin:', error)
@@ -423,10 +635,22 @@ GROUP BY
     if (rows.length == 0) {
       return { data: [], length: 0 }
     }
-    const [length] = await pool.query(`SELECT COUNT(*) AS count FROM orders WHERE userId = ?` ,[userId])
+    const [length] = await pool.query(
+      `SELECT COUNT(*) AS count FROM orders WHERE userId = ?`,
+      [userId]
+    )
     return { data: rows, length: length[0].count }
   } catch (error) {
     console.error('Error during viewOrdersList:', error)
+    throw new Error('Something went wrong')
+  }
+}
+
+const deleteOrderById = async orderId => {
+  try {
+    await pool.query(`DELETE FROM orders WHERE id = ?`, [orderId])
+  } catch (error) {
+    console.error('Error during deleteOrderById:', error)
     throw new Error('Something went wrong')
   }
 }
@@ -439,5 +663,10 @@ module.exports = {
   cancelOrder,
   viewOrdersListOfUserAsAdmin,
   viewOrdersListAsAdmin,
-  viewOrdersList
+  viewOrdersList,
+  setPaymobOrderId,
+  getOrderByPaymobId,
+  confirmOrder,
+  updateOrderStatusToFailed,
+  deleteOrderById
 }

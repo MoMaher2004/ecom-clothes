@@ -19,6 +19,12 @@ router.post(
   makeOrder
 )
 
+router.patch(
+  '/paymobWebhook',
+  verifyToken,
+  makeOrder
+)
+
 router.get(
   '/viewOrderAsAdmin/:id',
   verifyToken,

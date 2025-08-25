@@ -103,7 +103,7 @@ const changePassword = async (
 const checkUserAuth = async id => {
   try {
     const [rows] = await conn.query(
-      'SELECT passwordLastUpdatedAt, isEmailConfirmed, isDeleted, email, isAdmin FROM users WHERE id = ?',
+      'SELECT passwordLastUpdatedAt, isEmailConfirmed, isDeleted, email, isAdmin, firstName, lastName FROM users WHERE id = ?',
       [id]
     )
     return rows[0]

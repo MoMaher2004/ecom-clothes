@@ -3,8 +3,8 @@ const validators = require('../utils/validators')
 const jwt = require('jsonwebtoken')
 const { sendEmail } = require('../utils/sendEmail')
 
-const createToken = (id, email, authType) => {
-  return jwt.sign({ id, email, authType }, process.env.JWT_SECRET, {
+const createToken = (id, email, authType, firstName, lastName ) => {
+  return jwt.sign({ id, email, authType, firstName, lastName }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '1h'
   })
 }
@@ -96,6 +96,8 @@ const verifyToken = async (req, res, next) => {
     req.user = {
       id: decoded.id,
       email: decoded.email,
+      firstName: decoded.firstName,
+      lastName: decoded.lastName,
       isAdmin: checkUserAuth.isAdmin,
       authType: decoded.authType
     }
@@ -149,7 +151,7 @@ const login = async (req, res, fromFunction = false) => {
     if (result == null) {
       return res.status(401).json({ error: 'Invalid email or password' })
     }
-    result.token = createToken(result.id, result.email, 'password')
+    result.token = createToken(result.id, result.email, 'password', result.firstName, result.lastName)
     saveCookies(res, result.token)
     if (fromFunction) {
       return true
@@ -363,7 +365,7 @@ const confirmUserEmail = async (req, res) => {
     if (result.error) {
       return res.status(400).json({ error: 'Invalid URL' })
     }
-    result.token = createToken(result.id, result.email, 'emailConfirmation')
+    result.token = createToken(result.id, result.email, 'emailConfirmation', result.firstName, result.lastName)
     saveCookies(res, result.token)
     return res
       .status(200)
@@ -530,7 +532,7 @@ const checkPasswordToken = async (req, res) => {
     if (result == null) {
       return res.status(401).json({ error: 'Invalid email or password' })
     }
-    result.token = createToken(result.id, result.email, 'email')
+    result.token = createToken(result.id, result.email, 'email', result.firstName, result.lastName)
     saveCookies(res, result.token)
 
     return res
