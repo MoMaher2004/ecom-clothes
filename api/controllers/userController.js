@@ -151,20 +151,20 @@ const login = async (req, res, fromFunction = false) => {
     if (result == null) {
       return res.status(401).json({ error: 'Invalid email or password' })
     }
-    result.token = createToken(result.id, result.email, 'password', result.firstName, result.lastName)
-    saveCookies(res, result.token)
-    if (fromFunction) {
-      return true
-    }
-    let redirect
     if (result.isEmailConfirmed == 0) {
-      redirect = 'confirmEmailPage'
+      return res
+        .status(200)
+        .json({ success: 'Login is successful', redirect: 'confirmEmailPage', email })
     } else {
-      redirect = 'homePage'
+      result.token = createToken(result.id, result.email, 'password', result.firstName, result.lastName)
+      saveCookies(res, result.token)
+      if (fromFunction) {
+        return true
+      }
+      return res
+        .status(200)
+        .json({ success: 'Login is successful', redirect: 'homePage' })
     }
-    return res
-      .status(200)
-      .json({ success: 'Login is successful', redirect: redirect })
   } catch (error) {
     console.error('login error:', error)
     return res
@@ -289,8 +289,12 @@ const updateEmailConfirmationToken = async email => {
   }
 }
 
-const updateResetPasswordToken = async email => {
+const updateResetPasswordToken = async (email) => {
   try {
+    const checkingEmailConfirmation = await userModel.getUserByEmail(email)
+    if(checkingEmailConfirmation.isEmailConfirmed == 0) {
+      return {error: 'Please confirm your Email first', redirect: 'confirmEmailPage', email}
+    }
     const result = await userModel.updateResetPasswordToken(email)
     if (!result.success) {
       throw new Error('unknown error')
@@ -304,11 +308,12 @@ const updateResetPasswordToken = async email => {
 
 const resendEmailConfirmationToken = async (req, res) => {
   try {
-    const { email, id } = req.user
+    const { email } = req.body
+    const toGetUserId = await userModel.getUserByEmail(email)
     const result = await updateEmailConfirmationToken(email)
     const from = 'support'
     const subject = 'Confirm Email'
-    const message = `click here to confirm your email: ${process.env.URL}/user/confirm-email?token=${encodeURIComponent(result.emailConfirmationToken)}&id=${encodeURIComponent(id)}`
+    const message = `click here to confirm your email: ${process.env.URL}/user/confirm-email?token=${encodeURIComponent(result.emailConfirmationToken)}&id=${encodeURIComponent(toGetUserId.id)}`
     let sendEmailRes
     try {
       sendEmailRes = await sendEmail(email, from, subject, message)
@@ -331,6 +336,9 @@ const sendResetPasswordToken = async (req, res) => {
   try {
     const { email } = req.body
     const result = await updateResetPasswordToken(email)
+    if (result.error){
+      return res.status(400).json(result)
+    }
     const from = 'support'
     const subject = 'Reset Password'
     const message = `click here to reset your password: ${process.env.URL}/user/confirm-email?token=${encodeURIComponent(result.resetPasswordToken)}&email=${encodeURIComponent(email)}`
@@ -408,8 +416,6 @@ const addUser = async (req, res) => {
     if (addUserRes.error) {
       return res.status(400).json({ error: addUserRes.error })
     }
-
-    await login(req, res, true)
 
     const result = await updateEmailConfirmationToken(email)
     const from = 'support'
