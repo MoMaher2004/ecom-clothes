@@ -269,7 +269,7 @@ const getUsersList = async (page = 1, limit = 20, isDeleted = 0) => {
 const confirmUserEmail = async (id, token) => {
   try {
     const [rows] = await conn.query(
-      'SELECT emailConfirmationToken, isEmailConfirmed FROM users WHERE id = ? AND isDeleted = 0',
+      'SELECT * FROM users WHERE id = ? AND isDeleted = 0',
       [id]
     )
 
