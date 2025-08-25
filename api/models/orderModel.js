@@ -228,6 +228,11 @@ const viewOrderAsAdmin = async orderId => {
   JSON_ARRAYAGG(
     JSON_OBJECT(
       'productId', p.id,
+      'productImages', (
+          SELECT JSON_ARRAYAGG(im.fileName)
+          FROM images im
+          WHERE im.productId = p.id
+      ),
       'productName', p.name,
       'withNursery', p.withNursery,
       'quantity', i.quantity,
@@ -388,6 +393,12 @@ const viewOrder = async (orderId, userId) => {
   o.shipmentCost,
   JSON_ARRAYAGG(
     JSON_OBJECT(
+      'productId', p.id,
+      'productImages', (
+          SELECT JSON_ARRAYAGG(im.fileName)
+          FROM images im
+          WHERE im.productId = p.id
+      ),
       'productName', p.name,
       'withNursery', p.withNursery,
       'quantity', i.quantity,
@@ -399,7 +410,8 @@ FROM orders o
 JOIN items i ON i.orderId = o.id
 JOIN products p ON p.id = i.productId
 WHERE o.id = ? AND o.userId = ?
-GROUP BY o.id, o.issuedAt, o.status;`,
+GROUP BY o.id, o.issuedAt, o.status;
+`,
       [orderId, userId]
     )
     if (rows.length == 0) {
