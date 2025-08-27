@@ -56,7 +56,7 @@ const paymobWebhook = async (req, res) => {
 
     console.log(payload)
     console.log('---------------------------')
-    return console.log(req)
+     console.log(req)
 
     // Prepare the data to sign
     const dataToSign = JSON.stringify(payload) // Adjust this based on Paymob's documentation
