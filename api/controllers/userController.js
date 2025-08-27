@@ -76,12 +76,12 @@ const verifyToken = async (req, res, next) => {
       })
     }
 
-    // if (new Date(checkUserAuth.passwordUpdatedAt) > tokenIssuedAt) {
-    //   invalidateToken(res)
-    //   return res
-    //     .status(401)
-    //     .json({ error: 'Password changed, please login again' })
-    // }
+    if (new Date(checkUserAuth.passwordLastUpdatedAt) > tokenIssuedAt) {
+      invalidateToken(res)
+      return res
+        .status(401)
+        .json({ error: 'Password changed, please login again' })
+    }
     if (
       checkUserAuth.isEmailConfirmed == 0 &&
       !['/resendEmailConfirmationToken', '/confirm-email'].includes(
@@ -313,7 +313,7 @@ const resendEmailConfirmationToken = async (req, res) => {
     const result = await updateEmailConfirmationToken(email)
     const from = 'support'
     const subject = 'Confirm Email'
-    const message = `click here to confirm your email: ${process.env.URL}/user/confirm-email?token=${encodeURIComponent(result.emailConfirmationToken)}&id=${encodeURIComponent(toGetUserId.id)}`
+    const message = `click here to confirm your email: ${process.env.URL}/confirm?token=${encodeURIComponent(result.emailConfirmationToken)}&id=${encodeURIComponent(toGetUserId.id)}`
     let sendEmailRes
     try {
       sendEmailRes = await sendEmail(email, from, subject, message)
@@ -341,7 +341,7 @@ const sendResetPasswordToken = async (req, res) => {
     }
     const from = 'support'
     const subject = 'Reset Password'
-    const message = `click here to reset your password: ${process.env.URL}/user/confirm-email?token=${encodeURIComponent(result.resetPasswordToken)}&email=${encodeURIComponent(email)}`
+    const message = `click here to reset your password: ${process.env.URL}/resetPassword?token=${encodeURIComponent(result.resetPasswordToken)}&email=${encodeURIComponent(email)}`
     let sendEmailRes
     try {
       sendEmailRes = await sendEmail(email, from, subject, message)
@@ -420,7 +420,7 @@ const addUser = async (req, res) => {
     const result = await updateEmailConfirmationToken(email)
     const from = 'support'
     const subject = 'Confirm Email'
-    const message = `click here to confirm your email: ${process.env.URL}/users/confirm-email?token=${result.emailConfirmationToken}&id=${addUserRes.id}`
+    const message = `click here to confirm your email: ${process.env.URL}/confirm?token=${result.emailConfirmationToken}&id=${addUserRes.id}`
     let sendEmailRes
     try {
       sendEmailRes = await sendEmail(email, from, subject, message)

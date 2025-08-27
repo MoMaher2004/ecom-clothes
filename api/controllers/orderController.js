@@ -19,9 +19,10 @@ async function createPaymobPayment(totalPayment, billingData = {}) {
     {
       auth_token: authToken,
       delivery_needed: 'false',
-      amount_cents: String(totalPayment * 100),
+      amount_cents: Math.round(totalPayment * 100),
       currency: 'EGP',
-      items: []
+      items: [],
+      callback: 'https://72.60.44.168/api/order/paymobWebhook'
     }
   )
   const paymobOrderId = paymobOrderRes.data.id
@@ -30,7 +31,7 @@ async function createPaymobPayment(totalPayment, billingData = {}) {
     'https://accept.paymob.com/api/acceptance/payment_keys',
     {
       auth_token: authToken,
-      amount_cents: String(totalPayment * 100),
+      amount_cents: Math.round(totalPayment * 100),
       expiration: 3600,
       order_id: paymobOrderId,
       billing_data: billingData,
@@ -45,106 +46,6 @@ async function createPaymobPayment(totalPayment, billingData = {}) {
   return { iframeURL, paymobOrderId, paymentToken }
 }
 
-const makeOrder = async (req, res) => {
-  try {
-    const { id } = req.user
-    const {
-      government,
-      city,
-      address,
-      phoneNumber,
-      secondPhoneNumber,
-      notes,
-      zipCode
-    } = req.body
-    const egyptGovernorates = [
-      'Alexandria',
-      'Aswan',
-      'Asyut',
-      'Beheira',
-      'Beni Suef',
-      'Cairo',
-      'Dakahlia',
-      'Damietta',
-      'Faiyum',
-      'Gharbia',
-      'Giza',
-      'Ismailia',
-      'Kafr El Sheikh',
-      'Luxor',
-      'Matruh',
-      'Minya',
-      'Monufia',
-      'New Valley',
-      'North Sinai',
-      'Port Said',
-      'Qalyubia',
-      'Qena',
-      'Red Sea',
-      'Sharqia',
-      'Sohag',
-      'South Sinai',
-      'Suez'
-    ]
-    if (!zipCode || !government || !city || !address || !phoneNumber) {
-      return res.status(400).json({ error: 'Enter valid data' })
-    }
-    if (!egyptGovernorates.includes(government)) {
-      return res.status(400).json({ error: 'Enter valid government' })
-    }
-    const order = await orderModel.makeOrder(
-      id,
-      government,
-      city,
-      address,
-      phoneNumber,
-      secondPhoneNumber,
-      'Pending',
-      notes,
-      zipCode
-    )
-    if (order.error) {
-      return res.status(400).json({ error: order.error })
-    }
-
-    const cartProducts = await cartModel.viewCart(id)
-    if (!cartProducts || cartProducts.length === 0) {
-      await orderModel.deleteOrderById(order.insertId)
-      return res.status(400).json({ error: 'Cart is empty' })
-    }
-
-    const totalAmount = order.shipmentCost + cartProducts.totalPrice
-    const billing = {
-      first_name: req.user.firstName,
-      last_name: req.user.lastName,
-      email: req.user.email,
-      phone_number: phoneNumber,
-      apartment: 'NA',
-      floor: 'NA',
-      street: address,
-      building: 'NA',
-      postal_code: zipCode,
-      city: city,
-      state: government,
-      country: 'EG'
-    }
-
-    const { iframeURL, paymobOrderId } = await createPaymobPayment(
-      totalAmount,
-      billing
-    )
-
-    await orderModel.setPaymobOrderId(order.insertId, paymobOrderId)
-
-    return res.status(200).json({ orderId: order.insertId, iframeURL })
-  } catch (error) {
-    console.error('makeOrder error:', error)
-    return res
-      .status(500)
-      .json({ error: 'Internal server error, Please try again' })
-  }
-}
-
 const paymobWebhook = async (req, res) => {
   try {
     const payload = req.body
@@ -152,6 +53,10 @@ const paymobWebhook = async (req, res) => {
       req.headers['x-paymob-hmac'] ||
       req.headers['x-paymob-signature'] ||
       req.headers['hmac']
+
+    console.log(payload)
+    console.log('---------------------------')
+    return console.log(req)
 
     // Prepare the data to sign
     const dataToSign = JSON.stringify(payload) // Adjust this based on Paymob's documentation
@@ -187,7 +92,6 @@ const paymobWebhook = async (req, res) => {
     if (payload.success === true || payload.success === 'true') {
       try {
         await orderModel.confirmOrder(ourOrderId)
-        console.log(`✅ Order ${ourOrderId} confirmed after payment`)
       } catch (err) {
         console.error('confirmOrder failed:', err)
       }
@@ -201,6 +105,108 @@ const paymobWebhook = async (req, res) => {
   } catch (err) {
     console.error('paymobWebhook error:', err)
     return res.status(500).send('Internal server error, Please try again')
+  }
+}
+
+const makeOrder = async (req, res) => {
+  try {
+    const { id } = req.user
+    const {
+      government,
+      city,
+      address,
+      phoneNumber,
+      secondPhoneNumber,
+      notes,
+      zipCode,
+      items
+    } = req.body
+    const egyptGovernorates = [
+      'Alexandria',
+      'Aswan',
+      'Assiut',
+      'Beheira',
+      'Beni Suef',
+      'Cairo',
+      'Dakahlia',
+      'Damietta',
+      'Fayoum',
+      'Gharbia',
+      'Giza',
+      'Ismailia',
+      'Kafr El Sheikh',
+      'Luxor',
+      'Matrouh',
+      'Minya',
+      'Monufia',
+      'New Valley',
+      'North Sinai',
+      'Port Said',
+      'Qalyubia',
+      'Qena',
+      'Red Sea',
+      'Sharqia',
+      'Sohag',
+      'South Sinai',
+      'Suez'
+    ]
+    if (!zipCode || !government || !city || !address || !phoneNumber || !items || items == []) {
+      return res.status(400).json({ error: 'Enter valid data' })
+    }
+    if (!egyptGovernorates.includes(government)) {
+      return res.status(400).json({ error: 'Enter valid government' })
+    }
+    const order = await orderModel.makeOrder(
+      id,
+      government,
+      city,
+      address,
+      phoneNumber,
+      secondPhoneNumber,
+      'Pending',
+      notes,
+      zipCode,
+      items
+    )
+    if (order.error) {
+      return res.status(400).json({ error: order.error })
+    }
+
+    // const cartProducts = await cartModel.viewCart(id)
+    // if (!cartProducts || cartProducts.length === 0) {
+    //   await orderModel.deleteOrderById(order.insertId)
+    //   return res.status(400).json({ error: 'Cart is empty' })
+    // }
+
+    const totalAmount = order.shipmentCost + order.totalProductsCost
+    const billing = {
+      first_name: req.user.firstName,
+      last_name: req.user.lastName,
+      email: req.user.email,
+      phone_number: phoneNumber,
+      apartment: 'NA',
+      floor: 'NA',
+      street: address,
+      building: 'NA',
+      postal_code: zipCode,
+      city: city,
+      state: government,
+      country: 'EG'
+    }
+
+    const { iframeURL, paymobOrderId } = await createPaymobPayment(
+      totalAmount,
+      billing
+    )
+
+    await orderModel.setPaymobOrderId(order.insertId, paymobOrderId)
+
+    return res.status(200).json({ orderId: order.insertId, iframeURL })
+  } catch (error) {
+    console.error('makeOrder error:', error)
+    return res
+      .status(500)
+      .json({ error: 'Internal server error, Please try again' })
   }
 }
 
@@ -287,7 +293,7 @@ const viewOrdersListOfUserAsAdmin = async (req, res) => {
     if (isNaN(id) || id < 1) {
       return res.status(400).json({ error: 'Enter valid ID' })
     }
-    const result = await orderModel.viewOrdersListOfUserAsAdmin(id, page, limit)
+    const result = await orderModel.viewOrdersListOfUserAsAdmin(id, page, limit, req.query.status)
     if (result.error) {
       return res.status(400).json({ error: result.error })
     }
@@ -304,7 +310,7 @@ const viewOrdersListAsAdmin = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1
     const limit = parseInt(req.query.limit) || 10
-    const result = await orderModel.viewOrdersListAsAdmin(page, limit)
+    const result = await orderModel.viewOrdersListAsAdmin(page, limit, req.query.status)
     if (result.error) {
       return res.status(400).json({ error: result.error })
     }
@@ -322,7 +328,7 @@ const viewOrdersList = async (req, res) => {
     const id = req.user.id
     const page = parseInt(req.query.page) || 1
     const limit = parseInt(req.query.limit) || 10
-    const result = await orderModel.viewOrdersList(id, page, limit)
+    const result = await orderModel.viewOrdersList(id, page, limit, req.query.status)
     return res.status(200).json(result)
   } catch (error) {
     console.error('viewOrdersList error:', error)

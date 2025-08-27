@@ -1,6 +1,7 @@
 const os = require('os')
+const path = require('path')
 const dotenv = require('dotenv')
-dotenv.config({ path: './config.env' })
+require("dotenv").config({ path: path.resolve(__dirname, "config.env") })
 const express = require('express')
 const userRoute = require('./routes/userRoute')
 const productRoute = require('./routes/productRoute')
@@ -10,7 +11,6 @@ const orderRoute = require('./routes/orderRoute')
 const shipmentCostsRoute = require('./routes/shipmentCostsRoute')
 const offerRoute = require('./routes/offerRoute')
 const cors = require('cors')
-const path = require('path')
 const fs = require('fs')
 
 const app = express()
@@ -20,11 +20,23 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir)
 }
 
+// app.use((req, res, next) => {
+//   console.log('Request received:');
+//   console.log('Method:', req.method);
+//   console.log('URL:', req.originalUrl);
+//   console.log('Headers:', req.headers);
+//   console.log('Body:', req.body);
+//   next(); // pass to next middleware or route
+// });
+
+// app.use(cors())
 app.use(cors({
-  origin: ["http://127.0.0.1:5500", "http://localhost:5173"],
-  methods: ["GET", "POST", "PATCH", 'PUT', "DELETE"],
+  origin: ["https://www.saddletrendy.com", "https://saddletrendy.com"],
+  methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }))
+
 app.use(express.json())
 app.use('../images', express.static('images'))
 app.use(express.urlencoded({ extended: true }))
@@ -36,6 +48,9 @@ app.use('/api/wishlist', wishlistRoute)
 app.use('/api/order', orderRoute)
 app.use('/api/shipmentCost', shipmentCostsRoute)
 app.use('/api/offer', offerRoute)
+app.use('/health', (req, res) => {
+  return res.status(200).json({msg: 'hi! server is working'})
+})
 
 const port = process.env.PORT || 3000
 

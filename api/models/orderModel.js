@@ -135,10 +135,13 @@ const makeOrder = async (
   secondPhoneNumber = '',
   status = 'Pending',
   notes,
-  zipCode
+  zipCode,
+  cartProducts
 ) => {
+  const conn = await pool.getConnection()
   try {
-    const [order] = await pool.query(
+    await conn.beginTransaction()
+    const [order] = await conn.query(
       `INSERT INTO orders 
       (userId,
       government,
@@ -167,21 +170,97 @@ const makeOrder = async (
       ]
     )
     if (order.affectedRows === 0) {
+      await conn.rollback()
       throw new Error('Something went wrong')
     }
     const orderId = order.insertId
 
-    const [shipmentCost] = await pool.query(
+    const [shipmentCost] = await conn.query(
       `SELECT cost FROM shipmentCosts WHERE government = ?`,
       [government]
     )
+
+    let product
+    let totalProductsCost = 0
+    let lowAmounts = []
+    for (let i = 0; i < cartProducts.length; i++) {
+      [product] = await conn.query(`SELECT price, name, discount, amountOfSmallSize, amountOfLargeSize FROM products WHERE id = ?`, [cartProducts[i].productId])
+      product = product[0]
+      if (cartProducts.amountOfSmallSize > product.amountOfSmallSize) {
+        lowAmounts.push({
+          id: cartProducts.productId,
+          name: cartProducts.name,
+          userAmount: cartProducts.amountOfSmallSize,
+          availableAmount: cartProducts.amountOfSmallSize
+        })
+      }
+      if (cartProducts.amountOfLargeSize > product.amountOfLargeSize) {
+        lowAmounts.push({
+          id: cartProducts.productId,
+          name: product.name,
+          userAmount: cartProducts.amountOfSmallSize,
+          availableAmount: product.amountOfLargeSize
+        })
+      }
+      cartProducts[i].pricePerUnit = (1 - product.discount) * product.price
+      totalProductsCost += (cartProducts[i].pricePerUnit * (cartProducts[i].amountOfLargeSize + cartProducts[i].amountOfSmallSize))
+    }
+    if (lowAmounts.length > 0) {
+      await conn.rollback()
+      return { error: 'low amount', data: lowAmounts }
+    }
+
+
+    let items = []
+    for (let i = 0; i < cartProducts.length; i++) {
+      // await conn.query(
+      //   `UPDATE products
+      //       SET amountOfSmallSize = amountOfSmallSize - ?,
+      //       amountOfLargeSize = amountOfLargeSize - ?
+      //       WHERE id = ?`,
+      //   [
+      //     cartProducts[i].amountOfSmallSize,
+      //     cartProducts[i].amountOfLargeSize,
+      //     cartProducts[i].productId
+      //   ]
+      // )
+      if (cartProducts[i].amountOfSmallSize > 0) {
+        items.push([
+          orderId,
+          cartProducts[i].productId,
+          cartProducts[i].amountOfSmallSize,
+          cartProducts[i].pricePerUnit,
+          'small'
+        ])
+      }
+      if (cartProducts[i].amountOfLargeSize > 0) {
+        items.push([
+          orderId,
+          cartProducts[i].productId,
+          cartProducts[i].amountOfLargeSize,
+          cartProducts[i].pricePerUnit,
+          'large'
+        ])
+      }
+    }
+    const [res] = await conn.query(
+      `INSERT INTO items (orderId, productId, quantity, pricePerUnit, size) VALUES ?`,
+      [items]
+    )
+    if (res.affectedRows === 0) {
+      await conn.rollback()
+      throw new Error('Something went wrong')
+    }
+    conn.commit()
     return {
       success: 'Order is added successfully',
       insertId: orderId,
-      shipmentCost: shipmentCost[0].cost
+      shipmentCost: shipmentCost[0].cost,
+      totalProductsCost
     }
   } catch (error) {
     console.error('Error during makeOrder:', error)
+    await conn.rollback()
     throw new Error('Something went wrong')
   }
 }
@@ -507,9 +586,23 @@ WHERE id = ?`,
   }
 }
 
-const viewOrdersListOfUserAsAdmin = async (userId, page = 1, limit = 20) => {
+const viewOrdersListOfUserAsAdmin = async (userId, page = 1, limit = 20, status = null) => {
   try {
     const offset = (page - 1) * limit
+    let selectStatus = ''
+    if (status == 'processing'){
+      selectStatus = ` AND status = 'Processing'`
+    }else if (status == 'pending'){
+      selectStatus = ` AND status = 'Pending'`
+    }else if (status == 'shipped'){
+      selectStatus = ` AND status = 'Shipped'`
+    }else if (status == 'delivered'){
+      selectStatus = ` AND status = 'Delivered'`
+    }else if (status == 'cancelled'){
+      selectStatus = ` AND status = 'Cancelled'`
+    }else if (status == 'failed'){
+      selectStatus = ` AND status = 'Failed'`
+    }
 
     const [rows] = await pool.query(
       `SELECT 
@@ -529,7 +622,7 @@ const viewOrdersListOfUserAsAdmin = async (userId, page = 1, limit = 20) => {
 FROM orders o
 JOIN users u ON u.id = o.userId
 JOIN items i ON i.orderId = o.id
-WHERE o.userId = ?
+WHERE o.userId = ? ${selectStatus}
 GROUP BY 
   o.id,
   o.trackCode,
@@ -543,6 +636,14 @@ GROUP BY
   o.shipmentCost,
   u.firstName,
   u.lastName
+  ORDER BY CASE status
+    WHEN 'Processing' THEN 2
+    WHEN 'Pending' THEN 1
+    WHEN 'Shipped' THEN 3
+    WHEN 'Delivered' THEN 4
+    WHEN 'Cancelled' THEN 5
+    WHEN 'Failed' THEN 6
+  END 
   LIMIT ? OFFSET ?`,
       [userId, limit, offset]
     )
@@ -560,9 +661,23 @@ GROUP BY
   }
 }
 
-const viewOrdersListAsAdmin = async (page = 1, limit = 20) => {
+const viewOrdersListAsAdmin = async (page = 1, limit = 20, status = null) => {
   try {
     const offset = (page - 1) * limit
+    let selectStatus = ''
+    if (status == 'processing'){
+      selectStatus = ` WHERE status = 'Processing'`
+    }else if (status == 'pending'){
+      selectStatus = ` WHERE status = 'Pending'`
+    }else if (status == 'shipped'){
+      selectStatus = ` WHERE status = 'Shipped'`
+    }else if (status == 'delivered'){
+      selectStatus = ` WHERE status = 'Delivered'`
+    }else if (status == 'cancelled'){
+      selectStatus = ` WHERE status = 'Cancelled'`
+    }else if (status == 'failed'){
+      selectStatus = ` WHERE status = 'Failed'`
+    }
     const [rows] = await pool.query(
       `SELECT 
   o.id AS orderId,
@@ -581,6 +696,7 @@ const viewOrdersListAsAdmin = async (page = 1, limit = 20) => {
 FROM orders o
 JOIN users u ON u.id = o.userId
 JOIN items i ON i.orderId = o.id
+${selectStatus}
 GROUP BY 
   o.id,
   o.trackCode,
@@ -594,6 +710,14 @@ GROUP BY
   o.shipmentCost,
   u.firstName,
   u.lastName
+  ORDER BY CASE status
+    WHEN 'Processing' THEN 2
+    WHEN 'Pending' THEN 1
+    WHEN 'Shipped' THEN 3
+    WHEN 'Delivered' THEN 4
+    WHEN 'Cancelled' THEN 5
+    WHEN 'Failed' THEN 6
+  END 
   LIMIT ? OFFSET ?`,
       [limit, offset]
     )
@@ -611,9 +735,21 @@ GROUP BY
   }
 }
 
-const viewOrdersList = async (userId, page = 1, limit = 20) => {
+const viewOrdersList = async (userId, page = 1, limit = 20, status = null) => {
   try {
     const offset = (page - 1) * limit
+    let selectStatus = ''
+    if (status == 'processing'){
+      selectStatus = ` AND status = 'Processing'`
+    }else if (status == 'pending'){
+      selectStatus = ` AND status = 'Pending'`
+    }else if (status == 'shipped'){
+      selectStatus = ` AND status = 'Shipped'`
+    }else if (status == 'delivered'){
+      selectStatus = ` AND status = 'Delivered'`
+    }else if (status == 'cancelled'){
+      selectStatus = ` AND status = 'Cancelled'`
+    }
     const [rows] = await pool.query(
       `SELECT 
   o.id AS orderId,
@@ -629,7 +765,7 @@ const viewOrdersList = async (userId, page = 1, limit = 20) => {
   SUM(i.pricePerUnit * i.quantity) AS productsCost
 FROM orders o
 JOIN items i ON i.orderId = o.id
-WHERE o.userId = ?
+WHERE o.userId = ? AND o.status != 'Failed' ${selectStatus}
 GROUP BY 
   o.id,
   o.trackCode,
@@ -641,6 +777,14 @@ GROUP BY
   o.issuedAt,
   o.updatedAt,
   o.shipmentCost
+  ORDER BY CASE status
+    WHEN 'Processing' THEN 2
+    WHEN 'Pending' THEN 1
+    WHEN 'Shipped' THEN 3
+    WHEN 'Delivered' THEN 4
+    WHEN 'Cancelled' THEN 5
+    WHEN 'Failed' THEN 6
+  END 
   LIMIT ? OFFSET ?`,
       [userId, limit, offset]
     )
