@@ -52,6 +52,14 @@ app.use('/health', (req, res) => {
   return res.status(200).json({msg: 'hi! server is working'})
 })
 
+const paymentRoutes = require('./routes/paymob.route')
+app.use('/api/paymob', paymentRoutes);
+
+// http://192.168.1.24:3000/api/paymob/create-payment
+// http://192.168.1.24:3000/api/paymob/webhook
+
+
+
 const port = process.env.PORT || 3000
 
 const interfaces = os.networkInterfaces()
