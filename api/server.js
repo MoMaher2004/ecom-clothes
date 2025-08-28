@@ -5,7 +5,6 @@ require("dotenv").config({ path: path.resolve(__dirname, "config.env") })
 const express = require('express')
 const userRoute = require('./routes/userRoute')
 const productRoute = require('./routes/productRoute')
-const cartRoute = require('./routes/cartRoute')
 const wishlistRoute = require('./routes/wishlistRoute')
 const orderRoute = require('./routes/orderRoute')
 const shipmentCostsRoute = require('./routes/shipmentCostsRoute')
@@ -30,12 +29,12 @@ if (!fs.existsSync(uploadDir)) {
 // });
 
 // app.use(cors())
-app.use(cors({
-  origin: ["https://www.saddletrendy.com", "https://saddletrendy.com"],
-  methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
-}))
+// app.use(cors({
+//   origin: ["https://www.saddletrendy.com", "https://saddletrendy.com"],
+//   methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
+//   allowedHeaders: ["Content-Type", "Authorization"],
+//   credentials: true
+// }))
 
 app.use(express.json())
 app.use('../images', express.static('images'))
@@ -43,7 +42,6 @@ app.use(express.urlencoded({ extended: true }))
 
 app.use('/api/user', userRoute)
 app.use('/api/product', productRoute)
-app.use('/api/cart', cartRoute)
 app.use('/api/wishlist', wishlistRoute)
 app.use('/api/order', orderRoute)
 app.use('/api/shipmentCost', shipmentCostsRoute)

@@ -2,7 +2,6 @@ const { error } = require('console')
 const orderModel = require('../models/orderModel')
 const va = require('../utils/validators')
 const axios = require('axios')
-const cartModel = require('../models/cartModel')
 const crypto = require('crypto')
 
 async function createPaymobPayment(totalPayment, billingData = {}) {
@@ -15,20 +14,20 @@ async function createPaymobPayment(totalPayment, billingData = {}) {
   const authToken = authRes.data.token
 
   const paymobOrderRes = await axios.post(
-    'https://accept.paymob.com/api/ecommerce/orders',
+    `${process.env.PAYMOB_API_URL}/ecommerce/orders`,
     {
       auth_token: authToken,
       delivery_needed: 'false',
       amount_cents: Math.round(totalPayment * 100),
       currency: 'EGP',
       items: [],
-      callback: 'https://72.60.44.168/api/order/paymobWebhook'
+      callback: process.env.CALL_BACK
     }
   )
   const paymobOrderId = paymobOrderRes.data.id
 
   const paymentKeyRes = await axios.post(
-    'https://accept.paymob.com/api/acceptance/payment_keys',
+    `${process.env.PAYMOB_API_URL}/acceptance/payment_keys`,
     {
       auth_token: authToken,
       amount_cents: Math.round(totalPayment * 100),
@@ -36,7 +35,8 @@ async function createPaymobPayment(totalPayment, billingData = {}) {
       order_id: paymobOrderId,
       billing_data: billingData,
       currency: 'EGP',
-      integration_id: parseInt(process.env.PAYMOB_INTEGRATION_ID)
+      integration_id: parseInt(process.env.PAYMOB_INTEGRATION_ID),
+      redirection_url: "https://saddletrendy.com/profile" 
     }
   )
   const paymentToken = paymentKeyRes.data.token
@@ -46,65 +46,66 @@ async function createPaymobPayment(totalPayment, billingData = {}) {
   return { iframeURL, paymobOrderId, paymentToken }
 }
 
-const paymobWebhook = async (req, res) => {
+async function verifyHmac(payload, receivedHmac) {
   try {
-    const payload = req.body
-    const hmacHeader =
-      req.headers['x-paymob-hmac'] ||
-      req.headers['x-paymob-signature'] ||
-      req.headers['hmac']
-
-    console.log(payload)
-    console.log('---------------------------')
-    return console.log(req)
-
-    // Prepare the data to sign
-    const dataToSign = JSON.stringify(payload) // Adjust this based on Paymob's documentation
-
-    // Compute the HMAC
-    const computed = crypto
-      .createHmac('sha512', process.env.PAYMOB_HMAC_KEY)
+    const dataToSign = JSON.stringify(payload);
+    const computedHmac = crypto
+      .createHmac('sha512', PAYMOB_HMAC_KEY)
       .update(dataToSign)
-      .digest('hex')
+      .digest('hex');
+    
+    return computedHmac === receivedHmac;
+  } catch (error) {
+    console.error('Error verifying HMAC:', error);
+    return false;
+  }
+}
 
-    // Validate the HMAC
-    if (!hmacHeader || computed !== hmacHeader) {
-      console.log('❌ Webhook HMAC invalid', { computed, hmacHeader })
-      return res.status(400).send('Invalid HMAC')
+async function handleCallback(req, res) {
+  try {
+    const payload = req.body.obj || req.body;
+    const hmacHeader = req.headers['hmac'] || 
+                      req.headers['x-paymob-hmac'] || 
+                      req.headers['x-paymob-signature'] || '';
+    const { order, success, pending, error_occured } = payload;
+    const paymobOrderId = order.id
+
+    const isHmacValid = await verifyHmac(payload, hmacHeader);
+    if (!isHmacValid) {
+      console.error('❌ Invalid HMAC signature');
+      await orderModel.updateOrderStatusToFailed(paymobOrderId)
+      return res.status(400).json({ error: "Invalid HMAC" });
     }
 
-    // Extract Paymob order ID
-    const paymobOrderId = payload.order?.id
-    if (!paymobOrderId) {
-      console.log('❌ Missing Paymob order ID', payload)
-      return res.status(400).send('Missing order ID')
-    }
+    console.log("✅ HMAC verified");
+    console.log("payload: ", payload);
 
-    // Retrieve your local order using the Paymob order ID
-    const ourOrder = await orderModel.getOrderByPaymobId(paymobOrderId)
-    if (!ourOrder) {
-      console.log('❌ No matching local order for Paymob order', paymobOrderId)
-      return res.status(404).send('Order not found')
-    }
-    const ourOrderId = ourOrder.id
 
-    // Handle payment success
-    if (payload.success === true || payload.success === 'true') {
-      try {
-        await orderModel.confirmOrder(ourOrderId)
-      } catch (err) {
-        console.error('confirmOrder failed:', err)
-      }
+    let paymentStatus = "failed";
+
+    if (error_occured) {
+      paymentStatus = "error";
+      console.error('❌ Payment error:', payload);
+      await orderModel.updateOrderStatusToFailed(paymobOrderId)
+    } else if (success === true || success === "true") {
+      paymentStatus = "paid";
+      console.log('✅ Payment successful for order:', order?.id);
+      const orderId = await orderModel.getOrderByPaymobId(paymobOrderId)
+      await orderModel.confirmOrder(orderId.id)
+    } else if (pending === true || pending === "true") {
+      paymentStatus = "pending";
+      console.log('⏳ Payment pending for order:', order?.id);
+      await orderModel.updateOrderStatusToFailed(paymobOrderId)
     } else {
-      // Handle payment failure
-      await orderModel.updateOrderStatusToFailed(ourOrderId)
-      console.log(`❌ Payment failed for order ${ourOrderId}`)
+      console.log('❌ Payment failed for order:', order?.id);
+      await orderModel.updateOrderStatusToFailed(paymobOrderId)
     }
 
-    return res.status(200).send('Webhook processed')
-  } catch (err) {
-    console.error('paymobWebhook error:', err)
-    return res.status(500).send('Internal server error, Please try again')
+    return res.status(200).json({ status: "received", paymentStatus });
+
+  } catch (error) {
+    console.error('🔥 Error in payment callback:', error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 }
 
@@ -119,7 +120,8 @@ const makeOrder = async (req, res) => {
       secondPhoneNumber,
       notes,
       zipCode,
-      items
+      items,
+      paymentMethod
     } = req.body
     const egyptGovernorates = [
       'Alexandria',
@@ -150,11 +152,23 @@ const makeOrder = async (req, res) => {
       'South Sinai',
       'Suez'
     ]
-    if (!zipCode || !government || !city || !address || !phoneNumber || !items || items == []) {
+    if (
+      !zipCode ||
+      !government ||
+      !city ||
+      !address ||
+      !phoneNumber ||
+      !items ||
+      items == [] ||
+      !paymentMethod
+    ) {
       return res.status(400).json({ error: 'Enter valid data' })
     }
     if (!egyptGovernorates.includes(government)) {
       return res.status(400).json({ error: 'Enter valid government' })
+    }
+    if (!['cashOnDelivery', 'paymob'].includes(paymentMethod)) {
+      return res.status(400).json({ error: 'Enter valid payment method' })
     }
     const order = await orderModel.makeOrder(
       id,
@@ -166,7 +180,8 @@ const makeOrder = async (req, res) => {
       'Pending',
       notes,
       zipCode,
-      items
+      items,
+      paymentMethod
     )
     if (order.error) {
       return res.status(400).json({ error: order.error })
@@ -178,30 +193,35 @@ const makeOrder = async (req, res) => {
     //   return res.status(400).json({ error: 'Cart is empty' })
     // }
 
-    const totalAmount = order.shipmentCost + order.totalProductsCost
-    const billing = {
-      first_name: req.user.firstName,
-      last_name: req.user.lastName,
-      email: req.user.email,
-      phone_number: phoneNumber,
-      apartment: 'NA',
-      floor: 'NA',
-      street: address,
-      building: 'NA',
-      postal_code: zipCode,
-      city: city,
-      state: government,
-      country: 'EG'
+    if (paymentMethod == 'paymob') {
+      const totalAmount = order.shipmentCost + order.totalProductsCost
+      const billing = {
+        first_name: req.user.firstName,
+        last_name: req.user.lastName,
+        email: req.user.email,
+        phone_number: phoneNumber,
+        apartment: 'NA',
+        floor: 'NA',
+        street: address,
+        building: 'NA',
+        postal_code: zipCode,
+        city: city,
+        state: government,
+        country: 'EG'
+      }
+
+      const { iframeURL, paymobOrderId } = await createPaymobPayment(
+        totalAmount,
+        billing
+      )
+
+      await orderModel.setPaymobOrderId(order.insertId, paymobOrderId)
+      return res.status(200).json({ orderId: order.insertId, iframeURL })
+    }else if(paymentMethod == 'cashOnDelivery'){
+      await orderModel.confirmOrder(order.insertId)
+      return res.status(200).json({ success: 'Order is placed successfully', orderId: order.insertId })
     }
-
-    const { iframeURL, paymobOrderId } = await createPaymobPayment(
-      totalAmount,
-      billing
-    )
-
-    await orderModel.setPaymobOrderId(order.insertId, paymobOrderId)
-
-    return res.status(200).json({ orderId: order.insertId, iframeURL })
+    
   } catch (error) {
     console.error('makeOrder error:', error)
     return res
@@ -293,7 +313,12 @@ const viewOrdersListOfUserAsAdmin = async (req, res) => {
     if (isNaN(id) || id < 1) {
       return res.status(400).json({ error: 'Enter valid ID' })
     }
-    const result = await orderModel.viewOrdersListOfUserAsAdmin(id, page, limit, req.query.status)
+    const result = await orderModel.viewOrdersListOfUserAsAdmin(
+      id,
+      page,
+      limit,
+      req.query.status
+    )
     if (result.error) {
       return res.status(400).json({ error: result.error })
     }
@@ -310,7 +335,11 @@ const viewOrdersListAsAdmin = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1
     const limit = parseInt(req.query.limit) || 10
-    const result = await orderModel.viewOrdersListAsAdmin(page, limit, req.query.status)
+    const result = await orderModel.viewOrdersListAsAdmin(
+      page,
+      limit,
+      req.query.status
+    )
     if (result.error) {
       return res.status(400).json({ error: result.error })
     }
@@ -328,7 +357,12 @@ const viewOrdersList = async (req, res) => {
     const id = req.user.id
     const page = parseInt(req.query.page) || 1
     const limit = parseInt(req.query.limit) || 10
-    const result = await orderModel.viewOrdersList(id, page, limit, req.query.status)
+    const result = await orderModel.viewOrdersList(
+      id,
+      page,
+      limit,
+      req.query.status
+    )
     return res.status(200).json(result)
   } catch (error) {
     console.error('viewOrdersList error:', error)
@@ -346,6 +380,6 @@ module.exports = {
   cancelOrder,
   viewOrdersListOfUserAsAdmin,
   viewOrdersListAsAdmin,
-  paymobWebhook,
+  handleCallback,
   viewOrdersList
 }

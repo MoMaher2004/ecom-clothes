@@ -136,7 +136,8 @@ const makeOrder = async (
   status = 'Pending',
   notes,
   zipCode,
-  cartProducts
+  cartProducts,
+  paymentMethod
 ) => {
   const conn = await pool.getConnection()
   try {
@@ -152,9 +153,10 @@ const makeOrder = async (
       status,
       notes,
       zipCode,
-      shipmentCost)
+      shipmentCost,
+      paymentMethod)
       VALUES
-      (?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT cost FROM shipmentCosts WHERE government = ?))
+      (?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT cost FROM shipmentCosts WHERE government = ?), ?)
       `,
       [
         id,
@@ -166,7 +168,8 @@ const makeOrder = async (
         status,
         notes,
         zipCode,
-        government
+        government,
+        paymentMethod
       ]
     )
     if (order.affectedRows === 0) {
@@ -184,7 +187,10 @@ const makeOrder = async (
     let totalProductsCost = 0
     let lowAmounts = []
     for (let i = 0; i < cartProducts.length; i++) {
-      [product] = await conn.query(`SELECT price, name, discount, amountOfSmallSize, amountOfLargeSize FROM products WHERE id = ?`, [cartProducts[i].productId])
+      ;[product] = await conn.query(
+        `SELECT price, name, discount, amountOfSmallSize, amountOfLargeSize FROM products WHERE id = ?`,
+        [cartProducts[i].productId]
+      )
       product = product[0]
       if (cartProducts.amountOfSmallSize > product.amountOfSmallSize) {
         lowAmounts.push({
@@ -203,13 +209,14 @@ const makeOrder = async (
         })
       }
       cartProducts[i].pricePerUnit = (1 - product.discount) * product.price
-      totalProductsCost += (cartProducts[i].pricePerUnit * (cartProducts[i].amountOfLargeSize + cartProducts[i].amountOfSmallSize))
+      totalProductsCost +=
+        cartProducts[i].pricePerUnit *
+        (cartProducts[i].amountOfLargeSize + cartProducts[i].amountOfSmallSize)
     }
     if (lowAmounts.length > 0) {
       await conn.rollback()
       return { error: 'low amount', data: lowAmounts }
     }
-
 
     let items = []
     for (let i = 0; i < cartProducts.length; i++) {
@@ -300,6 +307,7 @@ const viewOrderAsAdmin = async orderId => {
   o.notes,
   o.zipCode,
   o.shipmentCost,
+  o.paymentMethod,
   u.id AS userId,
   u.firstName,
   u.lastName,
@@ -341,94 +349,37 @@ GROUP BY o.id, u.id, u.firstName, u.lastName, u.email, o.issuedAt, o.status;`,
   }
 }
 
-const confirmOrder = async (orderId) => {
+const confirmOrder = async orderId => {
   const conn = await pool.getConnection()
   try {
     await conn.beginTransaction()
 
-    const [orderRows] = await conn.query(`SELECT userId FROM orders WHERE id = ? FOR UPDATE`, [
-      orderId
-    ])
-    if (!orderRows || orderRows.length === 0) {
-      await conn.rollback()
-      throw new Error('Order not found')
-    }
-    const userId = orderRows[0].userId
-
-    const [cartProducts] = await conn.query(
-      `SELECT c.*,
-         (p.price * (1 - p.discount)) AS price,
-         p.name,
-         p.amountOfSmallSize AS amountOfSmallSize,
-         p.amountOfLargeSize AS amountOfLargeSize
-       FROM carts c
-       JOIN products p on c.productId = p.id
-       WHERE c.userId = ?`,
-      [userId]
+    const [items] = await conn.query(
+      `SELECT * FROM items WHERE orderId = ?`,
+      [orderId]
     )
-
-    if (!cartProducts || cartProducts.length === 0) {
-      await conn.rollback()
-      throw new Error('Cart is empty')
-    }
-
-    let lowAmounts = []
-    for (let i = 0; i < cartProducts.length; i++) {
-      const cp = cartProducts[i]
-      if ((cp.smallQuantity || 0) > cp.amountOfSmallSize) {
-        lowAmounts.push({
-          id: cp.productId,
-          name: cp.name,
-          userAmount: cp.smallQuantity,
-          availableAmount: cp.amountOfSmallSize
-        })
-      }
-      if ((cp.largeQuantity || 0) > cp.amountOfLargeSize) {
-        lowAmounts.push({
-          id: cp.productId,
-          name: cp.name,
-          userAmount: cp.largeQuantity,
-          availableAmount: cp.amountOfLargeSize
-        })
-      }
-    }
-    if (lowAmounts.length > 0) {
-      await conn.rollback()
-      return { error: 'low amount', data: lowAmounts }
-    }
-
-    let items = []
-    for (let i = 0; i < cartProducts.length; i++) {
-      const cp = cartProducts[i]
-      await conn.query(
-        `UPDATE products 
-         SET amountOfSmallSize = amountOfSmallSize - ?,
-             amountOfLargeSize = amountOfLargeSize - ?
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].size == 'small') {
+        await conn.query(
+          `UPDATE products 
+         SET amountOfSmallSize = amountOfSmallSize - ?
          WHERE id = ?`,
-        [cp.smallQuantity || 0, cp.largeQuantity || 0, cp.productId]
-      )
-      if ((cp.smallQuantity || 0) > 0) {
-        items.push([orderId, cp.productId, cp.smallQuantity, cp.price, 'small'])
-      }
-      if ((cp.largeQuantity || 0) > 0) {
-        items.push([orderId, cp.productId, cp.largeQuantity, cp.price, 'large'])
+          [items[i].quantity, items[i].productId]
+        )
+      } else if (items[i].size == 'large') {
+        await conn.query(
+          `UPDATE products 
+         SET amountOfLargeSize = amountOfLargeSize - ?
+         WHERE id = ?`,
+          [items[i].quantity, items[i].productId]
+        )
       }
     }
 
-    const [insRes] = await conn.query(
-      `INSERT INTO items (orderId, productId, quantity, pricePerUnit, size) VALUES ?`,
-      [items]
+    await conn.query(
+      `UPDATE orders SET status = 'Processing', updatedAt = NOW() WHERE id = ?`,
+      [orderId]
     )
-    if (insRes.affectedRows === 0) {
-      await conn.rollback()
-      throw new Error('Something went wrong inserting items')
-    }
-
-    await conn.query(`DELETE FROM carts WHERE userId = ?`, [userId])
-
-    await conn.query(`UPDATE orders SET status = 'Processing', updatedAt = NOW() WHERE id = ?`, [
-      orderId
-    ])
 
     await conn.commit()
     return { success: 'Order confirmed and processed' }
@@ -441,11 +392,12 @@ const confirmOrder = async (orderId) => {
   }
 }
 
-const updateOrderStatusToFailed = async (orderId) => {
+const updateOrderStatusToFailed = async paymobOrderId => {
   try {
-    const [res] = await pool.query(`UPDATE orders SET status = 'Failed' WHERE id = ?`, [
-      orderId
-    ])
+    const [res] = await pool.query(
+      `UPDATE orders SET status = 'Failed' WHERE paymobOrderId = ?`,
+      [paymobOrderId]
+    )
     return res
   } catch (err) {
     console.error('updateOrderStatusToFailed error:', err)
@@ -470,6 +422,7 @@ const viewOrder = async (orderId, userId) => {
   o.notes,
   o.zipCode,
   o.shipmentCost,
+  o.paymentMethod,
   JSON_ARRAYAGG(
     JSON_OBJECT(
       'productId', p.id,
@@ -507,16 +460,16 @@ GROUP BY o.id, o.issuedAt, o.status;
   }
 }
 
-const getOrderByPaymobId = async (paymobId) => {
+const getOrderByPaymobId = async paymobOrderId => {
   try {
     const [rows] = await pool.query(
-      `SELECT id FROM orders WHERE paymobId = ?`,
-      [paymobId]
+      `SELECT id FROM orders WHERE paymobOrderId = ?`,
+      [paymobOrderId]
     )
     if (rows.length == 0) {
       return []
     }
-    return { id: rows[0] }
+    return rows[0]
   } catch (error) {
     console.error('Error during getOrderByPaymobId:', error)
     throw new Error('Something went wrong')
@@ -586,21 +539,26 @@ WHERE id = ?`,
   }
 }
 
-const viewOrdersListOfUserAsAdmin = async (userId, page = 1, limit = 20, status = null) => {
+const viewOrdersListOfUserAsAdmin = async (
+  userId,
+  page = 1,
+  limit = 20,
+  status = null
+) => {
   try {
     const offset = (page - 1) * limit
     let selectStatus = ''
-    if (status == 'processing'){
+    if (status == 'processing') {
       selectStatus = ` AND status = 'Processing'`
-    }else if (status == 'pending'){
+    } else if (status == 'pending') {
       selectStatus = ` AND status = 'Pending'`
-    }else if (status == 'shipped'){
+    } else if (status == 'shipped') {
       selectStatus = ` AND status = 'Shipped'`
-    }else if (status == 'delivered'){
+    } else if (status == 'delivered') {
       selectStatus = ` AND status = 'Delivered'`
-    }else if (status == 'cancelled'){
+    } else if (status == 'cancelled') {
       selectStatus = ` AND status = 'Cancelled'`
-    }else if (status == 'failed'){
+    } else if (status == 'failed') {
       selectStatus = ` AND status = 'Failed'`
     }
 
@@ -616,6 +574,7 @@ const viewOrdersListOfUserAsAdmin = async (userId, page = 1, limit = 20, status 
   o.issuedAt,
   o.updatedAt,
   o.shipmentCost,
+  o.paymentMethod,
   u.firstName,
   u.lastName,
   SUM(i.pricePerUnit * i.quantity) AS productsCost
@@ -665,17 +624,17 @@ const viewOrdersListAsAdmin = async (page = 1, limit = 20, status = null) => {
   try {
     const offset = (page - 1) * limit
     let selectStatus = ''
-    if (status == 'processing'){
+    if (status == 'processing') {
       selectStatus = ` WHERE status = 'Processing'`
-    }else if (status == 'pending'){
+    } else if (status == 'pending') {
       selectStatus = ` WHERE status = 'Pending'`
-    }else if (status == 'shipped'){
+    } else if (status == 'shipped') {
       selectStatus = ` WHERE status = 'Shipped'`
-    }else if (status == 'delivered'){
+    } else if (status == 'delivered') {
       selectStatus = ` WHERE status = 'Delivered'`
-    }else if (status == 'cancelled'){
+    } else if (status == 'cancelled') {
       selectStatus = ` WHERE status = 'Cancelled'`
-    }else if (status == 'failed'){
+    } else if (status == 'failed') {
       selectStatus = ` WHERE status = 'Failed'`
     }
     const [rows] = await pool.query(
@@ -690,6 +649,7 @@ const viewOrdersListAsAdmin = async (page = 1, limit = 20, status = null) => {
   o.issuedAt,
   o.updatedAt,
   o.shipmentCost,
+  o.paymentMethod,
   u.firstName,
   u.lastName,
   SUM(i.pricePerUnit * i.quantity) AS productsCost
@@ -739,15 +699,15 @@ const viewOrdersList = async (userId, page = 1, limit = 20, status = null) => {
   try {
     const offset = (page - 1) * limit
     let selectStatus = ''
-    if (status == 'processing'){
+    if (status == 'processing') {
       selectStatus = ` AND status = 'Processing'`
-    }else if (status == 'pending'){
+    } else if (status == 'pending') {
       selectStatus = ` AND status = 'Pending'`
-    }else if (status == 'shipped'){
+    } else if (status == 'shipped') {
       selectStatus = ` AND status = 'Shipped'`
-    }else if (status == 'delivered'){
+    } else if (status == 'delivered') {
       selectStatus = ` AND status = 'Delivered'`
-    }else if (status == 'cancelled'){
+    } else if (status == 'cancelled') {
       selectStatus = ` AND status = 'Cancelled'`
     }
     const [rows] = await pool.query(
@@ -762,6 +722,7 @@ const viewOrdersList = async (userId, page = 1, limit = 20, status = null) => {
   o.issuedAt,
   o.updatedAt,
   o.shipmentCost,
+  o.paymentMethod,
   SUM(i.pricePerUnit * i.quantity) AS productsCost
 FROM orders o
 JOIN items i ON i.orderId = o.id

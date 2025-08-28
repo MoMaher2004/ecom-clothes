@@ -8,7 +8,7 @@ const {
   cancelOrder,
   viewOrdersListOfUserAsAdmin,
   viewOrdersListAsAdmin,
-  paymobWebhook,
+  handleCallback,
   viewOrdersList
 } = require('../controllers/orderController')
 
@@ -22,8 +22,7 @@ router.post(
 
 router.post(
   '/paymobWebhook',
-  verifyToken,
-  paymobWebhook
+  handleCallback
 )
 
 router.get(

@@ -62,7 +62,7 @@ const verifyToken = async (req, res, next) => {
       decoded = await verifyJWT(token, process.env.JWT_SECRET)
     } catch (error) {
       return res.status(401).json({
-        error: 'Failed to authenticate token',
+        error: 'Failed to authenticate token, Please login',
         redirect: 'loginPage'
       })
     }
@@ -71,7 +71,7 @@ const verifyToken = async (req, res, next) => {
 
     if (!checkUserAuth || checkUserAuth.isDeleted) {
       return res.status(404).json({
-        error: 'User not found',
+        error: 'User not found, Please login',
         redirect: 'loginPage'
       })
     }

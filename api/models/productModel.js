@@ -201,10 +201,6 @@ const deleteProduct = async id => {
       throw new Error('Something went wrong')
     }
     await transactionConn.query(
-      `DELETE FROM carts WHERE productId = ?`,
-      [id]
-    )
-    await transactionConn.query(
       `DELETE FROM wishlists WHERE productId = ?`,
       [id]
     )
