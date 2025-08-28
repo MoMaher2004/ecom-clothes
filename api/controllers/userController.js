@@ -313,7 +313,50 @@ const resendEmailConfirmationToken = async (req, res) => {
     const result = await updateEmailConfirmationToken(email)
     const from = 'support'
     const subject = 'Confirm Email'
-    const message = `click here to confirm your email: ${process.env.URL}/confirm?token=${encodeURIComponent(result.emailConfirmationToken)}&id=${encodeURIComponent(toGetUserId.id)}`
+    const message = `<!DOCTYPE html>
+<html>
+  <body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f9f9f9; padding:20px 0;">
+      <tr>
+        <td align="center">
+          <table width="400" cellpadding="20" cellspacing="0" border="0" style="background-color:#ffffff; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+            <tr>
+              <td align="center" style="padding-bottom:10px;">
+                <img src="https://saddletrendy.com/assets/logo-9ebce8a9.png" alt="Saddle Logo" width="150" height="50" style="display:block; border-radius:8px;" />
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="font-size:18px; font-weight:bold; color:#333333; padding-bottom:10px;">
+                Welcome to Saddle
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="font-size:14px; color:#555555; line-height:1.6;">
+                Please confirm your email by clicking the button below.
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:20px 0;">
+                <a href="${process.env.URL}/confirm?token=${encodeURIComponent(result.emailConfirmationToken)}&id=${encodeURIComponent(toGetUserId.id)}" 
+                   style="background-color:#1e88e5; color:#ffffff; text-decoration:none; padding:12px 24px; border-radius:4px; font-size:14px; display:inline-block;">
+                   Confirm Email
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="font-size:12px; color:#999999; padding-top:10px;">
+                If the button doesn’t work, copy and paste this link into your browser:<br>
+                <a href="${process.env.URL}/confirm?token=${encodeURIComponent(result.emailConfirmationToken)}&id=${encodeURIComponent(toGetUserId.id)}" style="color:#1e88e5; word-break:break-all;">
+                  ${process.env.URL}/confirm?token=${encodeURIComponent(result.emailConfirmationToken)}&id=${encodeURIComponent(toGetUserId.id)}
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`
     let sendEmailRes
     try {
       sendEmailRes = await sendEmail(email, from, subject, message)
@@ -341,7 +384,57 @@ const sendResetPasswordToken = async (req, res) => {
     }
     const from = 'support'
     const subject = 'Reset Password'
-    const message = `click here to reset your password: ${process.env.URL}/resetPassword?token=${encodeURIComponent(result.resetPasswordToken)}&email=${encodeURIComponent(email)}`
+    const message = `<!DOCTYPE html>
+<html>
+  <body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f9f9f9; padding:20px 0;">
+      <tr>
+        <td align="center">
+          <table width="400" cellpadding="20" cellspacing="0" border="0" style="background-color:#ffffff; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+            <tr>
+              <td align="center" style="padding-bottom:10px;">
+                <img src="LOGO_URL_HERE" alt="Saddle Logo" width="150" height="50" style="display:block;" />
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="font-size:18px; font-weight:bold; color:#333333; padding-bottom:10px;">
+                Reset Your Password
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="font-size:14px; color:#555555; line-height:1.6;">
+                We received a request to reset your password.  
+                Click the button below to create a new one.
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:20px 0;">
+                <a href="${process.env.URL}/resetPassword?token=${encodeURIComponent(result.resetPasswordToken)}&email=${encodeURIComponent(email)}" 
+                   style="background-color:#e53935; color:#ffffff; text-decoration:none; padding:12px 24px; border-radius:4px; font-size:14px; display:inline-block;">
+                   Reset Password
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="font-size:12px; color:#999999; padding-top:10px;">
+                If the button doesn’t work, copy and paste this link into your browser:<br>
+                <a href="${process.env.URL}/resetPassword?token=${encodeURIComponent(result.resetPasswordToken)}&email=${encodeURIComponent(email)}" style="color:#e53935; word-break:break-all;">
+                  ${process.env.URL}/resetPassword?token=${encodeURIComponent(result.resetPasswordToken)}&email=${encodeURIComponent(email)}
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="font-size:11px; color:#aaaaaa; padding-top:20px;">
+                If you did not request a password reset, you can safely ignore this email.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+`
     let sendEmailRes
     try {
       sendEmailRes = await sendEmail(email, from, subject, message)
@@ -420,7 +513,50 @@ const addUser = async (req, res) => {
     const result = await updateEmailConfirmationToken(email)
     const from = 'support'
     const subject = 'Confirm Email'
-    const message = `click here to confirm your email: ${process.env.URL}/confirm?token=${result.emailConfirmationToken}&id=${addUserRes.id}`
+    const message = `<!DOCTYPE html>
+<html>
+  <body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f9f9f9; padding:20px 0;">
+      <tr>
+        <td align="center">
+          <table width="400" cellpadding="20" cellspacing="0" border="0" style="background-color:#ffffff; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+            <tr>
+              <td align="center" style="padding-bottom:10px;">
+                <img src="https://saddletrendy.com/assets/logo-9ebce8a9.png" alt="Saddle Logo" width="150" height="50" style="display:block; border-radius:8px;" />
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="font-size:18px; font-weight:bold; color:#333333; padding-bottom:10px;">
+                Welcome to Saddle
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="font-size:14px; color:#555555; line-height:1.6;">
+                Please confirm your email by clicking the button below.
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:20px 0;">
+                <a href="${process.env.URL}/confirm?token=${encodeURIComponent(result.emailConfirmationToken)}&id=${encodeURIComponent(toGetUserId.id)}" 
+                   style="background-color:#1e88e5; color:#ffffff; text-decoration:none; padding:12px 24px; border-radius:4px; font-size:14px; display:inline-block;">
+                   Confirm Email
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="font-size:12px; color:#999999; padding-top:10px;">
+                If the button doesn’t work, copy and paste this link into your browser:<br>
+                <a href="${process.env.URL}/confirm?token=${encodeURIComponent(result.emailConfirmationToken)}&id=${encodeURIComponent(toGetUserId.id)}" style="color:#1e88e5; word-break:break-all;">
+                  ${process.env.URL}/confirm?token=${encodeURIComponent(result.emailConfirmationToken)}&id=${encodeURIComponent(toGetUserId.id)}
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`
     let sendEmailRes
     try {
       sendEmailRes = await sendEmail(email, from, subject, message)

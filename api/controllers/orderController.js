@@ -48,15 +48,36 @@ async function createPaymobPayment(totalPayment, billingData = {}) {
 
 async function verifyHmac(payload, receivedHmac) {
   try {
-    const dataToSign = JSON.stringify(payload);
+    const concatenatedString =
+      payload.amount_cents +
+      payload.created_at +
+      payload.currency +
+      payload.error_occured +
+      payload.has_parent_transaction +
+      payload.id +
+      payload.integration_id +
+      payload.is_3d_secure +
+      payload.is_auth +
+      payload.is_capture +
+      payload.is_refunded +
+      payload.is_standalone_payment +
+      payload.is_voided +
+      (payload.order?.id || payload.order) +
+      payload.owner +
+      payload.pending +
+      payload.source_data.pan +
+      payload.source_data.sub_type +
+      payload.source_data.type +
+      payload.success;
+
     const computedHmac = crypto
-      .createHmac('sha512', PAYMOB_HMAC_KEY)
-      .update(dataToSign)
-      .digest('hex');
-    
+      .createHmac("sha512", process.env.PAYMOB_HMAC_KEY)
+      .update(concatenatedString)
+      .digest("hex");
+
     return computedHmac === receivedHmac;
   } catch (error) {
-    console.error('Error verifying HMAC:', error);
+    console.error("Error verifying HMAC:", error);
     return false;
   }
 }
@@ -64,9 +85,12 @@ async function verifyHmac(payload, receivedHmac) {
 async function handleCallback(req, res) {
   try {
     const payload = req.body.obj || req.body;
-    const hmacHeader = req.headers['hmac'] || 
-                      req.headers['x-paymob-hmac'] || 
-                      req.headers['x-paymob-signature'] || '';
+    const hmacHeader =
+      req.query.hmac ||
+      req.headers['hmac'] ||
+      req.headers['x-paymob-hmac'] ||
+      req.headers['x-paymob-signature'] ||
+      '';
     const { order, success, pending, error_occured } = payload;
     const paymobOrderId = order.id
 
@@ -77,10 +101,6 @@ async function handleCallback(req, res) {
       return res.status(400).json({ error: "Invalid HMAC" });
     }
 
-    console.log("✅ HMAC verified");
-    console.log("payload: ", payload);
-
-
     let paymentStatus = "failed";
 
     if (error_occured) {
@@ -89,7 +109,6 @@ async function handleCallback(req, res) {
       await orderModel.updateOrderStatusToFailed(paymobOrderId)
     } else if (success === true || success === "true") {
       paymentStatus = "paid";
-      console.log('✅ Payment successful for order:', order?.id);
       const orderId = await orderModel.getOrderByPaymobId(paymobOrderId)
       await orderModel.confirmOrder(orderId.id)
     } else if (pending === true || pending === "true") {
